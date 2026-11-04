@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floor plan · eventnook NEXT</title>
+<!--
+  eventnook NEXT · Interactive floor plan + exhibitors
+  Self-contained: fonts, styles, markup and script. Paste it into any HTML block.
+
+  Edit the EXHIBITORS and ZONES lists in the script to change booths, text and positions.
+  Zone positions are in pixels on a 354 × 480 plan and scale with the screen width.
+
+  Deep links (so an exhibitor page elsewhere in the app can open the map on a booth):
+    ...?locate=onsite        or   ...#locate=onsite
+    ...?exhibitor=ai         opens that exhibitor's card on the Exhibitors tab
+  From other scripts on the page: window.NextFloorPlan.locate('engage')
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #F7F8FE; }
+  .fp {
+    --fp-ink: #0A1B3D;
+    --fp-mute: #5B6478;
+    --fp-violet: #5B5CF5;
+    --fp-grad: linear-gradient(100deg, #0075ED, #7B5CF6);
+    --fp-ground: #F7F8FE;
+    position: relative;
+    overflow: hidden;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 18px 28px;
+    min-height: 640px;
+    box-sizing: border-box;
+    background:
+      radial-gradient(60% 30% at 8% 4%, rgba(0,117,237,.16), transparent 70%),
+      radial-gradient(60% 28% at 94% 98%, rgba(155,92,246,.18), transparent 70%),
+      var(--fp-ground);
+    color: var(--fp-ink);
+    font-family: "Inter Tight", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .fp *, .fp *::before, .fp *::after { box-sizing: border-box; }
+  .fp button { font: inherit; }
+  .fp :focus-visible { outline: 2px solid #7B5CF6; outline-offset: 3px; }
+
+  .fp-kicker { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 500; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fp-violet); }
+  .fp-title { margin: 6px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -.035em; line-height: 1.05; }
+
+  /* tabs */
+  .fp-tabs { margin-top: 16px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid rgba(10,27,61,.08); }
+  .fp-tab { min-height: 40px; border: 0; border-radius: 999px; background: transparent; color: var(--fp-mute); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s; }
+  .fp-tab[aria-selected="true"] { background: var(--fp-grad); color: #fff; }
+
+  /* plan */
+  .fp-plan {
+    position: relative;
+    margin-top: 16px;
+    width: 100%;
+    aspect-ratio: 354 / 480;
+    border-radius: 20px;
+    background: rgba(255,255,255,.88);
+    border: 1px solid rgba(10,27,61,.08);
+    box-shadow: 0 12px 30px rgba(60,64,170,.08);
+    container-type: inline-size;
+  }
+  .fp-walls { position: absolute; inset: 1.7%; border: 4px solid #CDD3E3; border-radius: 6px; }
+  .fp-deco { position: absolute; pointer-events: none; }
+  .fp-deco.is-box { border: 1px solid rgba(10,27,61,.14); border-radius: 4px; }
+  .fp-deco.is-seat { border: 1px solid rgba(10,27,61,.16); border-radius: 50%; }
+  .fp-deco.is-wall { background: #CDD3E3; border-radius: 2px; }
+  .fp-deco.is-stairs { background-image: repeating-linear-gradient(0deg, rgba(10,27,61,.10) 0 1px, transparent 1px 13px); border-left: 1px solid rgba(10,27,61,.12); }
+  .fp-deco.is-balcony { border-top: 2px solid #CDD3E3; background-image: repeating-linear-gradient(135deg, rgba(10,27,61,.04) 0 1px, transparent 1px 10px); }
+  .fp-deco.is-label { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 2.3cqw; letter-spacing: .1em; color: #8A93A6; }
+
+  .fp-zone {
+    position: absolute;
+    padding: 2px 4px;
+    border-radius: 10px;
+    border: 1.5px solid var(--z-border);
+    background: var(--z-bg);
+    color: var(--z-fg);
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    text-align: center;
+    transition: transform .2s cubic-bezier(.2,.7,.2,1), box-shadow .2s, background .2s;
+  }
+  .fp-zone:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(60,64,170,.18); }
+  .fp-zone-name { font-size: 3.25cqw; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+  .fp-zone-sub { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 2.4cqw; font-weight: 700; letter-spacing: .08em; opacity: .8; }
+  .fp-zone.is-booth { --z-bg: rgba(91,92,245,.14); --z-border: #5B5CF5; --z-fg: #2E2F9E; }
+  .fp-zone.is-talk  { --z-bg: rgba(0,117,237,.12); --z-border: #0075ED; --z-fg: #00468F; }
+  .fp-zone.is-guest { --z-bg: rgba(232,181,58,.22); --z-border: #C8901E; --z-fg: #5E4100; }
+  .fp-zone.is-entry { --z-bg: #EEF1F7; --z-border: #8A93A6; --z-fg: #3B4458; }
+  .fp-zone.is-active { box-shadow: 0 0 0 3px rgba(91,92,245,.35); }
+  .fp-zone.is-located { --z-bg: rgba(91,92,245,.28); z-index: 2; animation: fp-pulse 1.4s ease-in-out infinite; }
+  @keyframes fp-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(91,92,245,.55), 0 8px 18px rgba(60,64,170,.18); }
+    50%     { box-shadow: 0 0 0 10px rgba(91,92,245,0), 0 8px 18px rgba(60,64,170,.18); }
+  }
+
+  .fp-legend { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12px; font-weight: 600; color: var(--fp-mute); }
+  .fp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .fp-legend i { width: 12px; height: 12px; border-radius: 4px; border: 1.5px solid; }
+  .fp-hint { margin-top: 10px; font-size: 12px; font-weight: 500; color: var(--fp-mute); }
+
+  /* exhibitor list */
+  .fp-list { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .fp-count { font-size: 13px; font-weight: 600; color: var(--fp-mute); }
+  .fp-card {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    padding: 14px; border-radius: 18px;
+    border: 1px solid rgba(10,27,61,.08);
+    background: rgba(255,255,255,.9);
+    box-shadow: 0 8px 24px rgba(60,64,170,.07);
+    color: inherit; text-align: left; cursor: pointer;
+    transition: transform .2s cubic-bezier(.2,.7,.2,1);
+  }
+  .fp-card:hover { transform: translateY(-2px); }
+  .fp-card.is-flash { animation: fp-flash 1.6s ease-in-out 2; }
+  @keyframes fp-flash {
+    0%,100% { box-shadow: 0 8px 24px rgba(60,64,170,.07); }
+    50%     { box-shadow: 0 0 0 3px rgba(91,92,245,.45), 0 8px 24px rgba(60,64,170,.12); }
+  }
+  .fp-badge { flex: none; display: grid; place-items: center; color: #fff; font-weight: 800; letter-spacing: -.02em; }
+  .fp-card .fp-badge { width: 52px; height: 52px; border-radius: 16px; font-size: 17px; }
+  .fp-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .fp-card-meta { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 500; font-size: 10px; letter-spacing: .12em; color: var(--fp-violet); }
+  .fp-card-name { font-size: 15px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+  .fp-card-short { font-size: 12px; font-weight: 500; line-height: 1.35; color: var(--fp-mute); }
+  .fp-chev { flex: none; width: 18px; height: 18px; color: #8A93A6; }
+
+  /* drop-down detail card */
+  .fp-overlay { position: absolute; inset: 0; z-index: 10; border: 0; padding: 0; background: rgba(10,27,61,.42); cursor: pointer; animation: fp-fade .3s ease both; }
+  .fp-sheet {
+    position: absolute; left: 0; right: 0; top: 0; z-index: 11;
+    padding: 40px 24px 18px;
+    border-radius: 0 0 30px 30px;
+    background: #F9FAFF;
+    box-shadow: 0 24px 60px rgba(10,27,61,.28);
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    text-align: center;
+    animation: fp-drop .5s cubic-bezier(.2,.9,.25,1.04) both;
+  }
+  .fp-closing .fp-sheet { animation: fp-lift .26s cubic-bezier(.5,0,.75,0) both; }
+  .fp-closing .fp-overlay { animation: fp-fade-out .26s ease both; }
+  @keyframes fp-drop { from { transform: translateY(-104%); } to { transform: none; } }
+  @keyframes fp-lift { from { transform: none; } to { transform: translateY(-104%); } }
+  @keyframes fp-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fp-fade-out { from { opacity: 1; } to { opacity: 0; } }
+  .fp-close { position: absolute; right: 14px; top: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #EEF1F7; color: var(--fp-ink); display: grid; place-items: center; cursor: pointer; }
+  .fp-sheet .fp-badge { width: 88px; height: 88px; border-radius: 26px; font-size: 30px; box-shadow: 0 14px 30px rgba(91,92,245,.30); }
+  .fp-sheet-name { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.035em; line-height: 1.1; }
+  .fp-sheet-where { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--fp-mute); }
+  .fp-sheet-desc { margin: 0; align-self: stretch; text-align: left; font-size: 15px; font-weight: 500; line-height: 1.5; color: #4A5368; }
+  .fp-actions { align-self: stretch; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .fp-primary, .fp-secondary {
+    flex: 1 1 auto; min-height: 48px; padding: 0 18px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer;
+  }
+  .fp-primary { border: 0; background: var(--fp-grad); color: #fff; box-shadow: 0 8px 20px rgba(91,92,245,.3); }
+  .fp-secondary { border: 1px solid rgba(10,27,61,.12); background: #fff; color: var(--fp-violet); }
+  .fp-grip { width: 40px; height: 5px; border-radius: 999px; background: #DDE2EE; margin-top: 4px; }
+  .fp svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .fp [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fp *, .fp *::before, .fp *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="fp" id="next-floor-plan">
+  <div class="fp-kicker">eventnook NEXT · Level 3, BYD Boat Quay 1826</div>
+  <h2 class="fp-title" data-fp-title>Floor plan</h2>
+
+  <div class="fp-tabs" role="tablist" aria-label="View">
+    <button type="button" class="fp-tab" role="tab" aria-selected="true" data-fp-tab="map">Floor plan</button>
+    <button type="button" class="fp-tab" role="tab" aria-selected="false" data-fp-tab="list">Exhibitors</button>
+  </div>
+
+  <div data-fp-view="map">
+    <div class="fp-plan" data-fp-plan>
+      <div class="fp-walls"></div>
+    </div>
+    <div class="fp-legend">
+      <span><i style="background: rgba(91,92,245,.14); border-color: #5B5CF5"></i>Booth</span>
+      <span><i style="background: rgba(0,117,237,.12); border-color: #0075ED"></i>Talk / stage</span>
+      <span><i style="background: rgba(232,181,58,.22); border-color: #C8901E"></i>Guest services</span>
+      <span><i style="background: #EEF1F7; border-color: #8A93A6"></i>Entry</span>
+    </div>
+    <p class="fp-hint">Tap any zone to see what's there.</p>
+  </div>
+
+  <div data-fp-view="list" hidden>
+    <div class="fp-list" data-fp-list>
+      <div class="fp-count" data-fp-count></div>
+    </div>
+  </div>
+
+  <div data-fp-layer hidden>
+    <button type="button" class="fp-overlay" tabindex="-1" aria-label="Close details" data-fp-close></button>
+    <div class="fp-sheet" role="dialog" aria-modal="true" aria-labelledby="fp-sheet-name">
+      <button type="button" class="fp-close" aria-label="Close" data-fp-close>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="fp-badge" data-fp-s-badge></div>
+      <h3 class="fp-sheet-name" id="fp-sheet-name" data-fp-s-name></h3>
+      <div class="fp-sheet-where">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span data-fp-s-where></span>
+      </div>
+      <p class="fp-sheet-desc" data-fp-s-desc></p>
+      <div class="fp-actions">
+        <button type="button" class="fp-primary" data-fp-s-primary></button>
+        <a class="fp-secondary" target="_blank" rel="noopener" data-fp-s-link>Open in NookPass
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+        </a>
+      </div>
+      <div class="fp-grip" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* ------------------------------------------------------------------
+     DATA: edit here
+     ------------------------------------------------------------------ */
+  var EXHIBITORS_URL = "https://app.nookpass.com/e/eventnook-next/exhibitors";
+
+  var EXHIBITORS = [
+    { id: "onsite", num: "01", booth: "B-01", name: "Onsite", initials: "ON",
+      grad: "linear-gradient(135deg, #0075ED, #5B5CF5)",
+      short: "Badge boxes and live table allocation.",
+      desc: "Customise your badge box, and see table allocation with live viewing.",
+      url: EXHIBITORS_URL },
+    { id: "app", num: "02", booth: "B-02", name: "Event App – NookPass", initials: "EV",
+      grad: "linear-gradient(135deg, #6366F1, #A855F7 55%, #EC4899)",
+      short: "Matching, lead retrieval, live Q&A and an AI chatbot.",
+      desc: "Business matching and lead retrieval, notifications, live voting and Q&A, and an AI chatbot for attendees.",
+      url: EXHIBITORS_URL },
+    { id: "ai", num: "03", booth: "B-03", name: "AI-powered Event Setup", initials: "AI",
+      grad: "linear-gradient(135deg, #0075ED, #22D3EE)",
+      short: "Build an event site from a prompt.",
+      desc: "Build an event site from a prompt. Laptops at the booth to try it.",
+      url: EXHIBITORS_URL },
+    { id: "engage", num: "04", booth: "B-04", name: "Attendee Engagement", initials: "AT",
+      grad: "linear-gradient(135deg, #7B5CF6, #EC4899)",
+      short: "Passport Programme and NookPhoto.",
+      desc: "Play the Passport Programme on sample sites, and try NookPhoto.",
+      url: EXHIBITORS_URL },
+    { id: "gift", num: "05", booth: "B-05", name: "Gift Redemption", initials: "GI",
+      grad: "linear-gradient(135deg, #C8901E, #F2C94C)",
+      short: "Show your golden ticket for your gift.",
+      desc: "Collected all 5 passport stamps? Show your golden ticket here to claim your gift.",
+      url: EXHIBITORS_URL }
+  ];
+
+  /* kind: booth | talk | guest | entry. ex: links the zone to an exhibitor id. x, y, w, h on a 354 × 480 plan. */
+  var ZONES = [
+    { id: "entrance", label: "Entrance", sub: "LIFT", kind: "entry", x: 250, y: 12, w: 92, h: 42,
+      initials: "IN", grad: "linear-gradient(135deg, #8A93A6, #5B6478)", where: "Level 3 lift lobby",
+      desc: "Take the lift up to Level 3 at 33/34 Boat Quay. This is also the exit, where you can claim your final gift with your golden ticket on the way out." },
+    { id: "gift", label: "Gift Redemption", sub: "B-05 · EXIT", kind: "guest", ex: "gift", x: 128, y: 12, w: 116, h: 40 },
+    { id: "registration", label: "Registration", sub: "CHECK-IN", kind: "guest", x: 132, y: 60, w: 96, h: 40,
+      initials: "RG", grad: "linear-gradient(135deg, #C8901E, #F2C94C)",
+      desc: "Check in with NookPass and pick up your badge. Registration opens at 11:00 am." },
+    { id: "lunch", label: "Lunch", sub: "BUFFET", kind: "guest", x: 238, y: 64, w: 50, h: 130,
+      initials: "LU", grad: "linear-gradient(135deg, #C8901E, #F2C94C)",
+      desc: "Lunch is served here during the keynote and live product demo." },
+    { id: "stage", label: "Presentation", sub: "STAGE", kind: "talk", x: 14, y: 124, w: 78, h: 96,
+      initials: "ST", grad: "linear-gradient(135deg, #0075ED, #22D3EE)",
+      desc: "Welcome speech, then the keynote and live product demo with Joe from 12:30 to 2:00 pm. Scan the QR code during the speech for passport stamp 1." },
+    { id: "onsite", label: "Onsite", sub: "B-01", kind: "booth", ex: "onsite", x: 12, y: 246, w: 84, h: 36 },
+    { id: "photo", label: "NookPhoto", sub: "B-04", kind: "booth", ex: "engage", x: 12, y: 290, w: 84, h: 52 },
+    { id: "nookpass", label: "NookPass", sub: "B-02", kind: "booth", ex: "app", x: 188, y: 314, w: 80, h: 40 },
+    { id: "passport", label: "Passport", sub: "B-04", kind: "booth", ex: "engage", x: 274, y: 310, w: 70, h: 48 },
+    { id: "ai", label: "AI Setup", sub: "B-03", kind: "booth", ex: "ai", x: 96, y: 404, w: 78, h: 40 }
+  ];
+
+  /* background drawing: type box | seat | wall | stairs | balcony | label */
+  var DECOR = [
+    { t: "stairs", x: 296, y: 64, w: 46, h: 130 }, { t: "label", x: 300, y: 198, text: "STAIRS" },
+    { t: "box", x: 120, y: 150, w: 26, h: 120 },
+    { t: "seat", x: 160, y: 160, w: 16, h: 16 }, { t: "seat", x: 160, y: 190, w: 16, h: 16 },
+    { t: "seat", x: 160, y: 220, w: 16, h: 16 }, { t: "seat", x: 196, y: 236, w: 16, h: 16 },
+    { t: "box", x: 286, y: 228, w: 24, h: 44 },
+    { t: "box", x: 30, y: 356, w: 24, h: 40 }, { t: "box", x: 30, y: 410, w: 24, h: 40 },
+    { t: "wall", x: 176, y: 300, w: 6, h: 64 },
+    { t: "balcony", x: 184, y: 372, w: 158, h: 96 }, { t: "label", x: 192, y: 380, text: "BALCONY" }
+  ];
+
+  /* ------------------------------------------------------------------
+     No need to edit below
+     ------------------------------------------------------------------ */
+  var root = document.getElementById("next-floor-plan");
+  if (!root) return;
+  var PW = 354, PH = 480;
+  var $ = function (sel) { return root.querySelector(sel); };
+  var plan = $("[data-fp-plan]"), list = $("[data-fp-list]"), layer = $("[data-fp-layer]");
+  var title = $("[data-fp-title]");
+  var exById = {}; EXHIBITORS.forEach(function (e) { exById[e.id] = e; });
+  var zoneEls = {}, cardEls = {};
+  var lastFocus = null, locateTimer = null, flashTimer = null, closeTimer = null;
+  var MAP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5z"/><path d="M9 4v13M15 6.5v13"/></svg>';
+
+  function pct(v, of) { return (v / of * 100).toFixed(3) + "%"; }
+  function place(el, o) {
+    el.style.left = pct(o.x, PW); el.style.top = pct(o.y, PH);
+    if (o.w) el.style.width = pct(o.w, PW);
+    if (o.h) el.style.height = pct(o.h, PH);
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* draw decor */
+  DECOR.forEach(function (d) {
+    var n = el("div", "fp-deco is-" + d.t, d.text || null);
+    n.setAttribute("aria-hidden", "true");
+    place(n, d);
+    plan.appendChild(n);
+  });
+
+  /* draw zones */
+  ZONES.forEach(function (z) {
+    var b = el("button", "fp-zone is-" + z.kind);
+    b.type = "button";
+    b.setAttribute("aria-label", z.ex ? exById[z.ex].name + ", booth " + exById[z.ex].booth : z.label);
+    b.appendChild(el("span", "fp-zone-name", z.label));
+    if (z.sub) b.appendChild(el("span", "fp-zone-sub", z.sub));
+    place(b, z);
+    b.addEventListener("click", function () { openSheet({ zone: z.id, from: "map" }); });
+    zoneEls[z.id] = b;
+    plan.appendChild(b);
+  });
+
+  /* draw exhibitor list */
+  $("[data-fp-count]").textContent = EXHIBITORS.length + " on the expo floor";
+  EXHIBITORS.forEach(function (e) {
+    var c = el("button", "fp-card"); c.type = "button";
+    var badge = el("span", "fp-badge", e.initials); badge.style.background = e.grad;
+    var body = el("span", "fp-card-body");
+    body.appendChild(el("span", "fp-card-meta", e.num + " · BOOTH " + e.booth));
+    body.appendChild(el("span", "fp-card-name", e.name));
+    body.appendChild(el("span", "fp-card-short", e.short));
+    var chev = el("span", "fp-chev");
+    chev.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+    c.appendChild(badge); c.appendChild(body); c.appendChild(chev);
+    c.addEventListener("click", function () { openSheet({ ex: e.id, from: "list" }); });
+    cardEls[e.id] = c;
+    list.appendChild(c);
+  });
+
+  /* tabs */
+  function setTab(tab) {
+    root.querySelectorAll("[data-fp-tab]").forEach(function (t) {
+      t.setAttribute("aria-selected", t.getAttribute("data-fp-tab") === tab ? "true" : "false");
+    });
+    root.querySelectorAll("[data-fp-view]").forEach(function (v) {
+      v.hidden = v.getAttribute("data-fp-view") !== tab;
+    });
+    title.textContent = tab === "map" ? "Floor plan" : "Exhibitors";
+  }
+  root.querySelectorAll("[data-fp-tab]").forEach(function (t) {
+    t.addEventListener("click", function () { setTab(t.getAttribute("data-fp-tab")); });
+  });
+
+  /* drop-down card */
+  var sBadge = $("[data-fp-s-badge]"), sName = $("[data-fp-s-name]"), sWhere = $("[data-fp-s-where]"),
+      sDesc = $("[data-fp-s-desc]"), sPrimary = $("[data-fp-s-primary]"), sLink = $("[data-fp-s-link]");
+  var primaryAction = null;
+
+  function openSheet(opts) {
+    clearTimeout(closeTimer);
+    root.classList.remove("fp-closing");
+    var zone = opts.zone ? ZONES.filter(function (z) { return z.id === opts.zone; })[0] : null;
+    var exId = opts.ex || (zone && zone.ex);
+    Object.keys(zoneEls).forEach(function (id) { zoneEls[id].classList.toggle("is-active", !!zone && id === zone.id); });
+
+    if (exId) {
+      var e = exById[exId];
+      var zoneNames = ZONES.filter(function (z) { return z.ex === exId; }).map(function (z) { return z.label; }).join(" + ");
+      sBadge.textContent = e.initials; sBadge.style.background = e.grad;
+      sName.textContent = e.name;
+      sWhere.textContent = "Booth " + e.booth + " · " + zoneNames;
+      sDesc.textContent = e.desc;
+      sLink.hidden = false; sLink.href = e.url || EXHIBITORS_URL;
+      sPrimary.hidden = false;
+      if (opts.from === "list") {
+        sPrimary.innerHTML = MAP_ICON + "<span>Show on floor plan</span>";
+        primaryAction = function () { closeSheet(function () { locate(exId); }); };
+      } else {
+        sPrimary.textContent = "View exhibitor";
+        primaryAction = function () { closeSheet(function () { showInList(exId); }); };
+      }
+    } else if (zone) {
+      sBadge.textContent = zone.initials || ""; sBadge.style.background = zone.grad || "var(--fp-grad)";
+      sName.textContent = zone.label;
+      sWhere.textContent = zone.where || ("Level 3 · " + zone.label);
+      sDesc.textContent = zone.desc || "";
+      sLink.hidden = true; sPrimary.hidden = true; primaryAction = null;
+    }
+    lastFocus = document.activeElement;
+    layer.hidden = false;
+    // restart the drop animation
+    var sheet = layer.querySelector(".fp-sheet");
+    sheet.style.animation = "none"; void sheet.offsetWidth; sheet.style.animation = "";
+    layer.querySelector(".fp-close").focus({ preventScroll: true });
+  }
+
+  function closeSheet(after) {
+    if (layer.hidden) { if (after) after(); return; }
+    root.classList.add("fp-closing");
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function () {
+      layer.hidden = true;
+      root.classList.remove("fp-closing");
+      Object.keys(zoneEls).forEach(function (id) { zoneEls[id].classList.remove("is-active"); });
+      if (lastFocus && lastFocus.focus && !after) lastFocus.focus({ preventScroll: true });
+      if (after) after();
+    }, 260);
+  }
+
+  sPrimary.addEventListener("click", function () { if (primaryAction) primaryAction(); });
+  root.querySelectorAll("[data-fp-close]").forEach(function (b) { b.addEventListener("click", function () { closeSheet(); }); });
+  document.addEventListener("keydown", function (ev) {
+    if (layer.hidden) return;
+    if (ev.key === "Escape") closeSheet();
+    if (ev.key === "Tab") { // keep focus inside the card
+      var f = layer.querySelectorAll(".fp-sheet button:not([hidden]), .fp-sheet a:not([hidden])");
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+      else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* locate a booth on the map */
+  function locate(exId) {
+    if (!exById[exId]) return;
+    setTab("map");
+    Object.keys(zoneEls).forEach(function (id) { zoneEls[id].classList.remove("is-located"); });
+    var first = null;
+    ZONES.forEach(function (z) {
+      if (z.ex === exId) { zoneEls[z.id].classList.add("is-located"); if (!first) first = zoneEls[z.id]; }
+    });
+    if (first) {
+      first.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      first.focus({ preventScroll: true });
+    }
+    clearTimeout(locateTimer);
+    locateTimer = setTimeout(function () {
+      Object.keys(zoneEls).forEach(function (id) { zoneEls[id].classList.remove("is-located"); });
+    }, 6000);
+  }
+
+  /* jump to an exhibitor in the list */
+  function showInList(exId) {
+    if (!cardEls[exId]) return;
+    setTab("list");
+    var c = cardEls[exId];
+    c.classList.remove("is-flash"); void c.offsetWidth; c.classList.add("is-flash");
+    c.scrollIntoView({ block: "center", behavior: "smooth" });
+    c.focus({ preventScroll: true });
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { c.classList.remove("is-flash"); }, 3400);
+  }
+
+  /* deep links: ?locate=id, #locate=id, ?exhibitor=id (booth codes like B-03 also work) */
+  function findEx(v) {
+    if (!v) return null;
+    v = decodeURIComponent(v).toLowerCase();
+    var hit = EXHIBITORS.filter(function (e) { return e.id === v || e.booth.toLowerCase() === v; })[0];
+    return hit ? hit.id : null;
+  }
+  var q = new URLSearchParams(location.search);
+  var h = new URLSearchParams(location.hash.replace(/^#/, ""));
+  var toLocate = findEx(q.get("locate") || h.get("locate"));
+  var toOpen = findEx(q.get("exhibitor") || h.get("exhibitor"));
+  if (toLocate) locate(toLocate);
+  else if (toOpen) { setTab("list"); openSheet({ ex: toOpen, from: "list" }); }
+
+  window.NextFloorPlan = {
+    locate: function (id) { var x = findEx(id); if (x) closeSheet(function () { locate(x); }); },
+    open: function (id) { var x = findEx(id); if (x) { setTab("list"); openSheet({ ex: x, from: "list" }); } },
+    showMap: function () { setTab("map"); },
+    showExhibitors: function () { setTab("list"); }
+  };
+})();
+</script>
+</body>
+</html>
