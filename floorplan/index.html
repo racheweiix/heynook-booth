@@ -30,8 +30,8 @@
     overflow: hidden;
     max-width: 640px;
     margin: 0 auto;
-    padding: 24px 18px 28px;
-    min-height: 640px;
+    padding: 14px 16px 12px;
+    min-height: 100vh;
     box-sizing: border-box;
     background:
       radial-gradient(60% 30% at 8% 4%, rgba(0,117,237,.16), transparent 70%),
@@ -46,18 +46,19 @@
   .fp :focus-visible { outline: 2px solid #7B5CF6; outline-offset: 3px; }
 
   .fp-kicker { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 500; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fp-violet); }
-  .fp-title { margin: 6px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -.035em; line-height: 1.05; }
+  .fp-title { margin: 4px 0 0; font-size: 24px; font-weight: 700; letter-spacing: -.035em; line-height: 1.05; }
 
   /* tabs */
-  .fp-tabs { margin-top: 16px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid rgba(10,27,61,.08); }
-  .fp-tab { min-height: 40px; border: 0; border-radius: 999px; background: transparent; color: var(--fp-mute); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s; }
+  .fp-tabs { margin-top: 10px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid rgba(10,27,61,.08); }
+  .fp-tab { min-height: 36px; border: 0; border-radius: 999px; background: transparent; color: var(--fp-mute); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s; }
   .fp-tab[aria-selected="true"] { background: var(--fp-grad); color: #fff; }
 
   /* plan */
   .fp-plan {
     position: relative;
-    margin-top: 16px;
-    width: 100%;
+    margin: 10px auto 0;
+    /* fit the whole plan on screen: as wide as the space allows, but no taller than the screen minus the header */
+    width: min(100%, calc((100vh - 200px) * 354 / 480));
     aspect-ratio: 354 / 480;
     border-radius: 20px;
     background: rgba(255,255,255,.88);
@@ -100,10 +101,10 @@
     50%     { box-shadow: 0 0 0 10px rgba(91,92,245,0), 0 8px 18px rgba(60,64,170,.18); }
   }
 
-  .fp-legend { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12px; font-weight: 600; color: var(--fp-mute); }
+  .fp-legend { margin-top: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; font-size: 11px; font-weight: 600; color: var(--fp-mute); }
   .fp-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .fp-legend i { width: 12px; height: 12px; border-radius: 4px; border: 1.5px solid; }
-  .fp-hint { margin-top: 10px; font-size: 12px; font-weight: 500; color: var(--fp-mute); }
+  .fp-hint { margin: 6px 0 0; text-align: center; font-size: 11px; font-weight: 500; color: var(--fp-mute); }
 
   /* exhibitor list */
   .fp-list { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
