@@ -190,6 +190,7 @@ async function board(fromGame) {
     // games on the left, videos on the right, a torn line between them
     const gi = GAMES.indexOf(t), vi = VIDEOS.indexOf(t);
     const x = t.game ? 117 + gi * 325 : 1177 + vi * 325, y = 215, r = [-1.5, 1, -.5, 1.5, -1][i];
+    place(c, x, y - 1100, r);                // wait above the screen until its turn to drop (not at the top-left corner)
     c.addEventListener('pointerup', () => { if (screen === 'board') { sfx('click', -10); t.video ? playVideo(t) : chapter(t); } });
     $(`<i class="tape" style="left:120px;top:-16px;transform:rotate(${r * 4}deg)"></i>`, c);
     return { c, x, y, r };
