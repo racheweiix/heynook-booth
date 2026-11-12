@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Booth 01">
 <title>Booth 01 · Onsite</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap">
@@ -58,6 +62,10 @@
 #vplay{position:absolute;inset:0;z-index:40;background:#000;display:none}
 #vplay video{position:absolute;inset:0;width:1920px;height:1080px}
 #game{position:fixed;inset:0;width:100%;height:100%;border:0;display:none;z-index:100;background:#17140f}
+/* full screen on a tablet: the first "Tap to start" asks for it; this button brings it back if someone leaves it */
+#fsb{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:101;width:54px;height:54px;border:0;border-radius:14px;
+  background:rgba(255,255,255,.16);color:#fff;font:28px/1 system-ui,sans-serif;display:none;align-items:center;justify-content:center;cursor:pointer}
+#fsb.on{display:flex}
 </style>
 </head>
 <body>
@@ -70,6 +78,7 @@
   <div class="grain"></div><div class="vig"></div>
 </div>
 <iframe id="game" allow="autoplay; fullscreen" title="Mini game"></iframe>
+<button id="fsb" aria-label="Full screen">⤢</button>
 <script src="../games/common.js"></script>
 <script>
 const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
@@ -105,6 +114,19 @@ let idleT = null;
 const armIdle = () => { clearTimeout(idleT); if (screen === 'board' || screen === 'chapter' || screen === 'videoEnd') idleT = setTimeout(() => { if (screen === 'videoEnd') endVideo({ k: '' }, false); attract(true); }, 30000); };
 addEventListener('pointerdown', armIdle);
 
+// ---------- full screen (iPad Safari needs the webkit names; iPhone has none, so the button stays hidden there) ----------
+const root = document.documentElement, fsb = document.getElementById('fsb');
+const fsOK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function goFull() {
+  if (!fsOK || fsOn()) return;
+  try { const p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+const fsSync = () => fsb.classList.toggle('on', fsOK && !fsOn());
+fsb.addEventListener('click', goFull);
+document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
+const TABLET = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1 || /[?&]kiosk/.test(location.search);   // iPad Safari calls itself a Mac but has touch points
+
 // ---------- the start screen ----------
 function attract(reset) {
   clearScreen(); screen = 'attract'; clearTimeout(idleT);
@@ -117,7 +139,7 @@ function attract(reset) {
   const rows = TAGS.filter(t => t.game).map(t => { const b = bestOf(t.game); return `<div><b>${t.k}</b>${t.name}<em>${b ? b.ini + ' · ' + b.label : '–'}</em></div>`; }).join('');
   const best = $(`<div class="best"><h4>TODAY'S BEST</h4>${rows}</div>`, L); place(best, 1390, 140, 2);
   const tp = $(`<div style="position:absolute;left:0;top:0;font:30px Special Elite;color:#E7DDC6;z-index:6">${GAMES.length} mini games · ${VIDEOS.length} short videos</div>`, L); place(tp, 120, 1000);
-  const b = button('Tap to start ▸', 800, 900, async () => { await G.audio(); G.music('loop.wav', -18); board(); }, true); L.appendChild(b);
+  const b = button('Tap to start ▸', 800, 900, async () => { if (TABLET) goFull(); await G.audio(); G.music('loop.wav', -18); board(); }, true); L.appendChild(b);
   // the printers breathe on the beat
   const run = RUN; let k = 0;
   hopT = setInterval(() => { if (run !== RUN) return; k++; const s = k % 2 ? 1.015 : 1; pv.style.transform = `translate(520px,${848 - 492 - (s - 1) * 400}px) scale(${s})`; bp.style.transform = `translate(950px,${848 - 394 - (s - 1) * 300}px) scale(${2 - s})`; }, BEAT * 1000);

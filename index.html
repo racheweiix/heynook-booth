@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HeyNook">
 <title>HeyNook Booth Player</title>
 <style>body{margin:0;padding:16px;background:#F3F5FA}</style>
 </head>
@@ -108,9 +112,21 @@
   player.style.setProperty('--hn-curtain', 'url("' + url('curtain') + '")');
   startBtn.style.setProperty('--hn-poster', 'url("' + url('poster') + '")');
   var framed = true && window.self !== window.top;   // shown inside another page (NookPass 'Embed URL'): fill that frame
-  if (/[?&]kiosk/.test(location.search) || framed) wrap.classList.add('hn-kiosk');
+  // a tablet at the booth (or the page saved to an iPad home screen) runs as a kiosk too
+  var tablet = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || navigator.maxTouchPoints > 1;   // iPad Safari calls itself a Mac but has touch points
+  var standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (/[?&]kiosk/.test(location.search) || framed || tablet || standalone) wrap.classList.add('hn-kiosk');
   if (framed) wrap.classList.add('hn-framed');
-  if (document.fullscreenEnabled && wrap.classList.contains('hn-kiosk')) fsBtn.hidden = false;
+  // full screen: iPad Safari needs the webkit names; iPhone has none, so the button stays hidden there
+  var fsOK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  var fsOn = function () { return !!(document.fullscreenElement || document.webkitFullscreenElement); };
+  function goFull() {
+    if (!fsOK || fsOn()) return;
+    wrap.classList.add('hn-kiosk');
+    try { var p = (wrap.requestFullscreen || wrap.webkitRequestFullscreen).call(wrap); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  }
+  function fsSync() { fsBtn.hidden = !(fsOK && wrap.classList.contains('hn-kiosk') && !fsOn()); }
+  document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 
   function show(v) { vMain.classList.toggle('on', v === vMain); vLoop.classList.toggle('on', v === vLoop); }
   function setHits(on) {
@@ -191,10 +207,11 @@
   Array.prototype.forEach.call(hits.children, function (b) { b.addEventListener('click', function () { pick(b.dataset.b); }); });
   $('hn-again').addEventListener('click', again);
   $('hn-restart').addEventListener('click', restart);
-  fsBtn.addEventListener('click', function () { (document.fullscreenElement ? document.exitFullscreen() : wrap.requestFullscreen()).catch(function () {}); });
+  fsBtn.addEventListener('click', goFull);
 
   // the first tap unlocks sound for both video players and the whoosh (browsers need one tap before playing sound)
   startBtn.addEventListener('click', function () {
+    if (tablet || /[?&]kiosk/.test(location.search)) goFull();   // the first tap on the booth tablet goes full screen
     startBtn.hidden = true;
     vLoop.src = url('loop'); vLoop.muted = true;
     play(vLoop).then(function () { vLoop.pause(); vLoop.currentTime = 0; vLoop.muted = false; });
