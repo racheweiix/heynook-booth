@@ -63,11 +63,11 @@
 #vplay video{position:absolute;inset:0;width:1920px;height:1080px}
 #game{position:fixed;inset:0;width:100%;height:100%;border:0;display:none;z-index:100;background:#17140f}
 /* full screen on a tablet: the first "Tap to start" asks for it; this button brings it back if someone leaves it */
-#fsb{position:fixed;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));z-index:101;border:0;border-radius:12px;padding:12px 18px 11px;
-  background:#2A2826;color:#F5EFE1;font:400 19px/1 'Archivo Black',Inter,sans-serif;letter-spacing:.04em;box-shadow:0 0 0 3px #F5EFE1,0 6px 12px rgba(0,0,0,.3);
-  display:none;align-items:center;gap:10px;cursor:pointer}
-#fsb svg{width:20px;height:20px}
+#fsb{position:absolute;left:1826px;top:24px;z-index:55;width:70px;height:70px;border:0;border-radius:18px;padding:0;
+  background:rgba(42,40,38,.55);color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
+#fsb svg{width:34px;height:34px}
 #fsb.on{display:flex}
+#fsnote{position:absolute;right:24px;top:108px;z-index:55;background:#2A2826;color:#F5EFE1;font:22px 'Special Elite';padding:10px 16px;border-radius:10px;display:none}
 </style>
 </head>
 <body>
@@ -78,9 +78,10 @@
   <div class="layer" id="L"></div>
   <div id="vplay"><video id="vid" playsinline preload="auto"></video></div>
   <div class="grain"></div><div class="vig"></div>
+  <button id="fsb" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  <div id="fsnote">Full screen isn't allowed in this browser</div>
 </div>
 <iframe id="game" allow="autoplay; fullscreen" title="Mini game"></iframe>
-<button id="fsb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Full screen</button>
 <script src="../games/common.js"></script>
 <script>
 const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
@@ -120,12 +121,23 @@ addEventListener('pointerdown', armIdle);
 const root = document.documentElement, fsb = document.getElementById('fsb');
 const fsOK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
 const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
-function goFull() {
-  if (!fsOK || fsOn()) return;
-  try { const p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+let fsRefused = false;
+function goFull(fromButton) {
+  if (!fsOK || fsOn() || fsRefused) return;
+  let settled = false;
+  const refused = () => {
+    if (settled || fsOn()) return; settled = true;
+    if (!fromButton) return;                                                             // the automatic try on "Tap to start": keep the button
+    if (window.self !== window.top) { window.open(location.href, '_blank'); return; }   // in the NookPass frame: the booth on its own page
+    fsRefused = true; fsSync();                                                          // anywhere else: say so once and hide the button
+    const n = document.getElementById('fsnote'); n.style.display = 'block'; setTimeout(() => n.style.display = 'none', 2600);
+  };
+  if (!root.requestFullscreen) document.addEventListener('webkitfullscreenerror', refused, { once: true });   // older iPads: no promise, an event
+  try { const p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(refused); } catch (e) { refused(); }
+  setTimeout(refused, 1500);                                                             // some hosts never answer: treat silence as a no
 }
-const fsSync = () => fsb.classList.toggle('on', fsOK && !fsOn() && (screen === 'attract' || screen === 'board'));   // never over a game's or video's own buttons
-fsb.addEventListener('click', goFull);
+const fsSync = () => fsb.classList.toggle('on', fsOK && !fsRefused && !fsOn() && (screen === 'attract' || screen === 'board'));   // never over a game's or video's own buttons
+fsb.addEventListener('click', () => goFull(true));
 document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 const TABLET = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1 || /[?&]kiosk/.test(location.search);   // iPad Safari calls itself a Mac but has touch points
 

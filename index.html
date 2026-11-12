@@ -120,12 +120,22 @@
   // full screen: iPad Safari needs the webkit names; iPhone has none, so the button stays hidden there
   var fsOK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   var fsOn = function () { return !!(document.fullscreenElement || document.webkitFullscreenElement); };
-  function goFull() {
-    if (!fsOK || fsOn()) return;
+  var fsRefused = false;
+  function goFull(fromButton) {
+    if (!fsOK || fsOn() || fsRefused) return;
     wrap.classList.add('hn-kiosk');
-    try { var p = (wrap.requestFullscreen || wrap.webkitRequestFullscreen).call(wrap); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+    var settled = false;
+    function refused() {   // the browser said no: inside NookPass open the player on its own page; elsewhere hide the button
+      if (settled || fsOn()) return; settled = true;
+      if (fromButton !== true) return;
+      if (framed) { window.open(location.href.split('#')[0], '_blank'); return; }
+      fsRefused = true; fsSync();
+    }
+    if (!wrap.requestFullscreen) document.addEventListener('webkitfullscreenerror', refused, { once: true });
+    try { var p = (wrap.requestFullscreen || wrap.webkitRequestFullscreen).call(wrap); if (p && p.catch) p.catch(refused); } catch (e) { refused(); }
+    setTimeout(refused, 1500);   // some hosts never answer: treat silence as a no
   }
-  function fsSync() { fsBtn.hidden = !(fsOK && wrap.classList.contains('hn-kiosk') && !fsOn()); }
+  function fsSync() { fsBtn.hidden = !(fsOK && !fsRefused && wrap.classList.contains('hn-kiosk') && !fsOn()); }
   document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 
   function show(v) { vMain.classList.toggle('on', v === vMain); vLoop.classList.toggle('on', v === vLoop); }
@@ -207,7 +217,7 @@
   Array.prototype.forEach.call(hits.children, function (b) { b.addEventListener('click', function () { pick(b.dataset.b); }); });
   $('hn-again').addEventListener('click', again);
   $('hn-restart').addEventListener('click', restart);
-  fsBtn.addEventListener('click', goFull);
+  fsBtn.addEventListener('click', function () { goFull(true); });
 
   // the first tap unlocks sound for both video players and the whoosh (browsers need one tap before playing sound)
   startBtn.addEventListener('click', function () {
