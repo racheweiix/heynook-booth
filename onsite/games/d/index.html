@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spot the Speakers</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="../common.css">
+<style>
+/* Mini game D · "Spot the Speakers": find the five speakers in a crowd. With black-only text every badge looks the same;
+   printed in white (speakers) and gold (VIPs), they stand out at a glance. Then the speaker's badge goes into a scrapbook. */
+#crowd{position:absolute;inset:0;z-index:10}
+#crowd .pup,#crowd .pup svg{pointer-events:none}
+#crowd .pup svg *{pointer-events:auto;cursor:pointer}
+#marks{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:28;pointer-events:none;overflow:visible}
+.x{position:absolute;left:0;top:0;z-index:32;color:var(--red);font:900 64px 'Archivo Black';pointer-events:none}
+.lbl{position:absolute;left:0;top:0;z-index:33;background:var(--strip);font:20px 'Special Elite';padding:6px 12px 4px;box-shadow:0 4px 6px rgba(40,28,10,.2);pointer-events:none;white-space:nowrap}
+#book{position:absolute;left:0;top:0;width:1040px;height:720px;z-index:42;background:#FBF6EA;box-shadow:0 0 0 8px #fff,0 26px 40px rgba(40,28,10,.35);
+  background-image:radial-gradient(rgba(60,50,35,.18) 1.4px,transparent 1.6px);background-size:28px 28px}
+#book .note{position:absolute;font:34px/1.25 'Special Elite';color:#3a3226}
+#book .stub{position:absolute;width:250px;height:120px;background:#E9A923;box-shadow:0 6px 10px rgba(40,28,10,.2);font:400 26px/1.1 'Archivo Black';padding:22px 24px;box-sizing:border-box;
+  -webkit-mask:radial-gradient(circle 12px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 12px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat}
+.hint .ht{font:32px/1.35 'Special Elite';margin-top:18px}.hint .ht b{font:400 34px 'Archivo Black'}
+.hint .hk{font:400 26px 'Archivo Black';margin-top:10px}
+.key{position:absolute;left:0;top:0;z-index:31;display:flex;gap:18px;background:var(--strip);padding:10px 16px;box-shadow:0 6px 10px rgba(40,28,10,.18);font:22px 'Special Elite'}
+.key span{display:flex;align-items:center;gap:8px}.key i{font:800 18px Inter;font-style:normal;padding:4px 8px;border-radius:5px}
+#real{position:absolute;left:0;top:0;width:330px;z-index:43;filter:drop-shadow(0 14px 14px rgba(40,28,10,.35))}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg"></div>
+  <div class="news" style="left:1240px;top:150px;width:560px;height:260px;transform:rotate(3deg)"></div>
+  <div class="news" style="left:60px;top:170px;width:460px;height:230px;transform:rotate(-3deg)"></div>
+  <div id="crowd"></div>
+  <svg id="marks" viewBox="0 0 1920 1080"></svg>
+  <div class="grain"></div><div class="vig"></div>
+</div>
+<script src="../common.js"></script>
+<script>
+const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
+const crowd = document.getElementById('crowd'), marks = document.getElementById('marks');
+const ROUND = 10;
+// two rows of big people (the back row stands in the gaps of the front row), so every badge can be read
+const SLOTS = [];
+[260, 540, 820, 1100, 1380, 1660].forEach(x => SLOTS.push({ x, y: 800, s: .86 }));
+[120, 400, 680, 960, 1240, 1520, 1800].forEach(x => SLOTS.push({ x, y: 1080, s: 1.04 }));
+const NAMES = ['PRIYA N.', 'AHMAD T.', 'SARAH L.', 'WEI JIE K.', 'NURUL A.', 'BEN O.', 'GRACE T.', 'RAVI S.', 'MEI LING C.', 'DANIEL W.', 'AISHA R.', 'KENJI M.', 'HUI MIN L.'];
+const COS = ['Pixelwork Labs', 'Nexora', 'Brightwave', 'Harbour & Co', 'Kite Studio', 'Lumen Bank'];
+const ROLE = i => [2, 5, 8, 11].includes(i) ? 'SPEAKER' : [0, 6, 10].includes(i) ? 'VIP' : 'DELEGATE';
+const NSP = 4;                                                    // speakers to find
+let key = null, RUN = 0, P = [], found = 0, wrong = 0, t0 = 0, lastFound = null, over = false, endRound, watch, hud, sway = 0, stats = [];
+
+// ---------- badges ----------
+function badgeSVG(p, colour) {
+  const kind = !colour ? 'plain' : p._role === 'SPEAKER' ? 'white' : p._role === 'VIP' ? 'gold' : 'plain';
+  const bg = kind === 'plain' ? '#FFFFFF' : '#15171D', fg = kind === 'gold' ? '#E3BF63' : kind === 'white' ? '#F5F5F2' : '#1D1B18';
+  return '<path d="M-14 -92 L-10 -58 M14 -92 L10 -58" stroke="#1d1d2b" fill="none" style="stroke-width:3"/>'
+    + '<rect x="-46" y="-62" width="92" height="120" rx="7" fill="#fff"/>' + `<rect x="-43" y="-59" width="86" height="114" rx="5" fill="${bg}"/>`
+    + `<rect x="-11" y="-53" width="22" height="5" rx="2.5" fill="${kind === 'plain' ? '#d9d2c2' : '#3a3d46'}"/>`
+    + `<text x="0" y="-22" text-anchor="middle" font-family="Inter" font-weight="800" font-size="13" fill="${fg}">${p._name}</text>`
+    + `<text x="0" y="2" text-anchor="middle" font-family="Inter" font-weight="800" font-size="14.5" letter-spacing=".5" fill="${fg}">${p._role}</text>`
+    + `<text x="0" y="24" text-anchor="middle" font-family="Inter" font-weight="600" font-size="9.5" fill="${fg}" opacity=".85">${p._co}</text>`;
+}
+function dress(colour) { P.forEach(p => p.querySelector('.slot').innerHTML = badgeSVG(p, colour)); }
+
+// ---------- the crowd ----------
+function build() {
+  crowd.innerHTML = ''; P = [];
+  NAMES.forEach((n, i) => {
+    const p = G.person({ ...G.look(i + 21), s: 1 }, crowd);
+    p._name = n; p._role = ROLE(i); p._co = COS[i % COS.length]; p._ph = i * 1.7; P.push(p);
+    p.addEventListener("pointerdown", e => hit(p, e));
+  });
+}
+function arrange(order) {
+  order.forEach((pi, k) => { const p = P[pi], sl = SLOTS[k]; p._sl = sl; p.style.zIndex = Math.round(sl.y); G.at(p, sl.x, sl.y, 0, sl.s); });
+}
+function shuffled() { const a = P.map((_, i) => i); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function startSway() {
+  const run = RUN; let last = 0;
+  const tick = now => {
+    if (run !== RUN || !sway) return;
+    if (now - last > 66) { last = now; const t = now / 1000; P.forEach(p => { const sl = p._sl; if (sl) G.at(p, sl.x + Math.sin(t * .8 + p._ph) * 2, sl.y - Math.abs(Math.sin(t * 1.4 + p._ph)) * 2, Math.sin(t * 1.1 + p._ph) * .7, sl.s); }); }
+    requestAnimationFrame(tick);
+  };
+  sway = 1; requestAnimationFrame(tick);
+}
+function ring(p, color, dashed) {     // a marker circle around a person, drawn on
+  const sl = p._sl, cx = sl.x, cy = sl.y - 205 * sl.s, rx = 78 * sl.s + 14, ry = 222 * sl.s;
+  const e = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+  Object.entries({ cx, cy, rx, ry, fill: 'none', stroke: color, 'stroke-width': 8, 'stroke-linecap': 'round', transform: `rotate(${(G.rnd() - .5) * 10} ${cx} ${cy})` }).forEach(([k, v]) => e.setAttribute(k, v));
+  marks.appendChild(e); const L = e.getTotalLength();
+  if (dashed) e.setAttribute('stroke-dasharray', '18 14');
+  else { e.style.strokeDasharray = L; e.style.strokeDashoffset = L; tween(.24, k => e.style.strokeDashoffset = L * (1 - k), 'out'); }
+  return e;
+}
+function label(p, text, color) { const sl = p._sl, l = $(`<div class="lbl" style="color:${color}">${text}</div>`); place(l, sl.x - 52, sl.y - 440 * sl.s - 20, -4); return l; }
+
+// ---------- tapping ----------
+function hit(p, e) {
+  if (over || p._found || !hud) return;
+  if (p._role === 'SPEAKER') {
+    p._found = true; found++; lastFound = p; G.ding(); sfx('pop', -10); G.mood(p, 'wow'); ring(p, '#E9A923');
+    setHud(); if (found === NSP) { over = true; endRound(); }
+  } else {
+    wrong++; G.boing(); const pt = G.pt(e), x = $('<div class="x">✗</div>'); place(x, pt.x - 22, pt.y - 40, -8); setTimeout(() => x.remove(), 600);
+    if (p._role === 'VIP' && stats.length) { const l = label(p, 'VIP', '#1D1B18'); setTimeout(() => l.remove(), 900); }
+    G.mood(p, 'frown'); setTimeout(() => G.mood(p, null), 700);
+  }
+}
+function setHud() { if (hud) hud.innerHTML = `Speakers found<b>${found} / ${NSP}</b>`; }
+
+// ---------- what to look for (a card before each round) ----------
+function exampleBadge(role, kind) {
+  const bg = kind === 'plain' ? '#FFFFFF' : '#15171D', fg = kind === 'gold' ? '#E3BF63' : kind === 'white' ? '#F5F5F2' : '#1D1B18';
+  return `<svg viewBox="-50 -66 100 128" style="width:230px;height:294px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><rect x="-46" y="-62" width="92" height="120" rx="7" fill="#fff"/><rect x="-43" y="-59" width="86" height="114" rx="5" fill="${bg}" stroke="#d9d2c2" stroke-width="${kind === 'plain' ? 1 : 0}"/>
+    <rect x="-11" y="-53" width="22" height="5" rx="2.5" fill="#d9d2c2"/><text x="0" y="-22" text-anchor="middle" font-family="Inter" font-weight="800" font-size="13" fill="${fg}">SARAH L.</text>
+    <text x="0" y="2" text-anchor="middle" font-family="Inter" font-weight="800" font-size="14.5" letter-spacing=".5" fill="${fg}">${role}</text><text x="0" y="24" text-anchor="middle" font-family="Inter" font-weight="600" font-size="9.5" fill="${fg}">Brightwave</text>
+    ${kind === 'plain' ? '<ellipse cx="0" cy="-3" rx="44" ry="16" fill="none" stroke="#E9A923" stroke-width="4"/>' : ''}</svg>`;
+}
+function hint(colour) {
+  return new Promise(res => {
+    const dim = $('<div data-dim style="position:absolute;inset:0;background:rgba(231,221,198,.75);z-index:41"></div>');
+    const body = colour
+      ? `<div style="display:flex;gap:36px;align-items:flex-end;justify-content:center">
+          <div style="text-align:center"><img src="../assets/img/badge-white.png" style="height:300px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><div class="hk">SPEAKER = white text</div></div>
+          <div style="text-align:center"><img src="../assets/img/badge-gold.png" style="height:300px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><div class="hk" style="color:#B8892D">VIP = gold text</div></div></div>
+          <div class="ht">Now speakers print in <b>white</b> on black.<br>Tap the white ones. Gold text is a VIP.</div>`
+      : `<div style="display:flex;gap:44px;align-items:center;justify-content:center">${exampleBadge('SPEAKER', 'plain')}
+          <div class="ht" style="text-align:left;margin:0">Find the <b>${NSP} speakers</b>.<br>Their badge says <b>SPEAKER</b>.<br>You have 10 seconds.</div></div>`;
+    const c = $(`<div class="card hint" style="left:410px;top:120px;width:1100px;padding:34px 40px 30px;box-sizing:border-box;text-align:center">
+      <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${colour ? 'ROUND 2 · GOLD &amp; WHITE TEXT' : 'ROUND 1 · BLACK TEXT ONLY'}</div>${body}</div>`);
+    sfx('paper', -10); tween(.3, e => place(c, 0, 500 * (1 - e), -.5));
+    IDLE.arm();
+    const b = button('Start ▸', 860, 120 + 34 + (colour ? 560 : 420), () => { IDLE.disarm(); dim.remove(); c.remove(); b.remove(); res(); }, true);
+    b.style.zIndex = 46;
+  });
+}
+
+// ---------- a round ----------
+async function round(colour) {
+  const run = RUN; found = 0; wrong = 0; over = false; lastFound = null; marks.innerHTML = '';
+  P.forEach(p => { p._found = false; G.mood(p, null); });
+  dress(colour); arrange(shuffled()); startSway();
+  await hint(colour); if (run !== RUN) return;
+  const s = await strip(colour ? 'Tap the speakers: the WHITE text badges!' : `Find the ${NSP} speakers. Tap them!`, 90, 40, { rot: -1 });
+  if (run !== RUN) return;
+  hud = $('<div class="hud"></div>'); place(hud, 1430, 40, -1); setHud();
+  if (colour) { key = $(`<div class="key"><span><i style="background:#15171D;color:#F5F5F2">Aa</i>White text = Speaker</span><span><i style="background:#15171D;color:#E3BF63">Aa</i>Gold text = VIP</span></div>`); place(key, 1130, 106, 1); }
+  const done = new Promise(r => endRound = r);
+  t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
+  IDLE.arm();
+  await done; if (run !== RUN) return;
+  const time = (performance.now() - t0) / 1000; watch.stop(); IDLE.disarm(); if (key) { key.remove(); key = null; }
+  stats.push({ found, wrong, time: found === NSP ? time.toFixed(1) + ' s' : 'over 10 s', secs: found === NSP ? +time.toFixed(1) : ROUND });
+  await unstrip(s); return run;
+}
+async function play() {
+  stats = [];
+  let run = await round(false); if (run !== RUN) return;
+  // show the ones that were missed
+  const missed = P.filter(p => p._role === 'SPEAKER' && !p._found), tags = [];
+  missed.forEach((p, i) => setTimeout(() => { ring(p, '#C8321E', true); tags.push(label(p, 'missed', '#C8321E')); sfx('pop', -18); }, i * 160));
+  const s = await strip(found === NSP ? `All ${NSP}! It took ${stats[0].time}.` : `You found ${found} of ${NSP}. Every badge looks the same.`, 90, 40, { rot: .6 });
+  await wait(2200); if (run !== RUN) return;
+  await wipe(async () => { s.remove(); tags.forEach(t => t.remove()); watch.el.remove(); hud.remove(); hud = null; marks.innerHTML = ''; });
+  run = await round(true); if (run !== RUN) return;
+  watch.el.remove(); hud.remove(); hud = null;
+  await keepsake(run);
+}
+async function keepsake(run) {
+  sway = 0;
+  const p = lastFound || P.find(q => q._role === 'SPEAKER'), sl = p._sl;
+  const s = await strip(stats[1].found === NSP ? `All ${NSP} in ${stats[1].time}. They stand out.` : `${stats[1].found} of ${NSP}. White on black is hard to miss.`, 90, 40, { rot: -.6 });
+  await wait(1400); if (run !== RUN) return;
+  const dim = $('<div data-dim style="position:absolute;inset:0;background:rgba(231,221,198,.8);z-index:41"></div>'); dim.style.opacity = 0;
+  tween(.3, e => dim.style.opacity = e);
+  s.style.zIndex = 46;
+  const book = $(`<div id="book"><div class="note" style="left:720px;top:110px;transform:rotate(-3deg)">too nice<br>to throw away</div>
+    <div class="stub" style="left:730px;top:300px;transform:rotate(5deg)">ADMIT ONE</div>
+    <div class="note" style="left:720px;top:480px;font-size:28px;transform:rotate(-2deg)">white on black ✦<br>gold on black</div>
+    <img src="../assets/img/badge-gold.png" alt="" style="position:absolute;left:50px;top:90px;width:300px;transform:rotate(-7deg);filter:drop-shadow(0 10px 10px rgba(40,28,10,.3))">
+    <i class="tape" style="left:40px;top:84px;transform:rotate(-34deg)"></i><i class="tape" style="left:250px;top:560px;transform:rotate(-20deg)"></i></div>`);
+  place(book, 440, 1200, -2); sfx('paper', -8);
+  await tween(.36, e => place(book, 440, 1200 - 1020 * e, -2), 'out');
+  // the badge leaves the speaker and becomes the real thing: white text on a black badge
+  const real = $('<img id="real" src="../assets/img/badge-white.png" alt="">');
+  const bx = sl.x - 165, by = sl.y - 158 * sl.s - 213;
+  place(real, bx, by, 0, .2); sfx('whoosh-short', -12);
+  await tween(.5, e => place(real, bx + (780 - bx) * e, by + (250 - by) * e - Math.sin(e * Math.PI) * 120, 5 * e, .2 + .8 * e), 'inout');
+  sfx('sparkle', -8);
+  const tapes = [[1030, 250, 34], [790, 640, -24]].map(([x, y, r]) => { const t = $('<i class="tape" style="z-index:44"></i>'); place(t, x, y, r); sfx('paper', -14); return t; });
+  await stamp('WORTH KEEPING', 1060, 800, 'var(--mustard)', -7, 45);
+  await wait(2600); if (run !== RUN) return;
+  await unstrip(s);
+  [book, real, dim, ...tapes].forEach(e => e.remove()); document.querySelectorAll('.stamp').forEach(e => e.remove());
+  finish();
+}
+async function finish() {
+  const [a, b] = stats;
+  await G.result({ kicker: 'SPOT THE SPEAKERS · YOUR RESULT', heads: ['Black text only', 'Gold & white text'],
+    rows: [['Speakers found', `${a.found} / ${NSP}`, `${b.found} / ${NSP}`], ['Time to find all four', a.time, b.time], ['Wrong taps', a.wrong, b.wrong]],
+    stamp: 'STANDS OUT', game: 'D', again: start, back: start,
+    lb: { title: 'sharpest eyes', score: a.found * 1000 - Math.round(b.secs * 10), label: `${a.found}/${NSP} · ${b.secs.toFixed(1)} s`, higher: true } });
+  IDLE.arm();
+}
+const IDLE = G.idle(20000, () => start());
+function start() {
+  RUN++; sway = 0; IDLE.disarm(); if (watch) watch.stop(); hud = null; over = true;
+  G.stage.querySelectorAll('.strip,.stamp,.btn,.card,.hud,.watch,.x,.lbl,.key,#book,#real,.tape,[data-dim]').forEach(e => e.remove());
+  marks.innerHTML = ''; build(); dress(false); arrange(P.map((_, i) => i));
+  G.titleCard('MINI GAME D · GOLD &amp; WHITE TEXT', 'Spot the Speakers', 'Four speakers are in this crowd.<br>Can you find them in 10 seconds?', () => play());
+}
+start();
+</script>
+</body>
+</html>

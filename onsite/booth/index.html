@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Booth 01 · Onsite</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../games/common.css">
+<style>
+/* Booth 01 · Onsite: the touchscreen. Start screen → a board of five tags → a short chapter → its mini game → back to the
+   board (✓ played). Today's best score for each game shows on the board and the start screen. */
+.layer{position:absolute;inset:0;z-index:5}
+#ground{position:absolute;left:0;top:0;width:1920px;height:260px;z-index:4}
+.sun{position:absolute;left:0;top:0;border-radius:50%;background:var(--mustard);z-index:3}
+.tagc{position:absolute;left:0;top:0;width:300px;height:600px;background:#FBF8F1;box-shadow:0 0 0 6px #fff,0 16px 24px rgba(40,28,10,.28);cursor:pointer;z-index:20;box-sizing:border-box;padding:26px 26px 22px}
+.tagc .lt{display:flex;align-items:center;gap:12px}
+.tagc .lt b{width:62px;height:62px;border-radius:50%;background:var(--ink);color:var(--paper);font:400 36px/62px 'Archivo Black';text-align:center}
+.tagc .lt i{font:800 17px Inter;letter-spacing:.14em;color:#fff;background:var(--red);border-radius:7px;padding:5px 9px;font-style:normal}
+.tagc h3{margin:18px 0 0;font:400 34px/1.05 'Archivo Black'}
+.tagc .ill{position:relative;height:222px;margin:12px -6px 8px}
+.tagc .ill img{position:absolute}
+.tagc p{margin:0;font:21px/1.3 'Special Elite'}
+.tagc p span{display:block;font:400 19px/1.2 'Archivo Black';margin-bottom:4px}
+.tagc .ft{position:absolute;left:26px;right:26px;bottom:20px;border-top:3px dashed rgba(0,0,0,.18);padding-top:12px}
+.tagc .go{font:400 26px 'Archivo Black'}
+.tagc .bt{font:19px 'Special Elite';color:#6b5d44;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tagc.done .go{color:var(--green)}
+#hop{position:absolute;left:0;top:0;width:370px;height:670px;z-index:21;pointer-events:none;overflow:visible}
+.best{position:absolute;left:0;top:0;width:470px;z-index:22;background:#FBF8F1;box-shadow:0 0 0 6px #fff,0 16px 24px rgba(40,28,10,.28);padding:26px 30px;box-sizing:border-box}
+.best h4{margin:0 0 6px;font:500 20px 'Special Elite';letter-spacing:.18em;color:#8a7a5a}
+.best div{display:flex;gap:14px;align-items:baseline;padding:10px 0;border-top:2px dashed rgba(0,0,0,.14);font:24px 'Special Elite'}
+.best div b{font:400 24px 'Archivo Black';width:30px}.best div em{margin-left:auto;font-style:normal;font:400 24px 'Archivo Black'}
+.pvc{position:absolute;left:0;top:0;width:208px;height:325px;transform-origin:0 0;border-radius:12px;overflow:hidden;box-shadow:0 0 0 3px #fff,0 8px 12px rgba(40,28,10,.22);z-index:20}
+.conf{position:absolute;left:0;top:0;width:20px;height:20px;z-index:19;box-shadow:0 0 0 3px #fff}
+.cutimg{position:absolute;left:0;top:0;z-index:10}
+.ph{position:absolute;left:0;top:0;width:250px;height:470px;border-radius:36px;background:#22252C;box-shadow:0 0 0 4px #fff,0 16px 24px rgba(40,28,10,.32);z-index:12}
+.ph .scr{position:absolute;inset:14px;border-radius:26px;background:#fff;overflow:hidden}
+.kiosk{position:absolute;left:0;top:0;width:893px;height:932px;transform-origin:0 0;z-index:10}
+.kiosk img{position:absolute;left:0;top:0;width:893px;height:932px}
+.ui{position:absolute;left:0;top:0;width:300px;height:400px;background:#0E1124;color:#fff;font-family:Inter;overflow:hidden;text-align:center;transform-origin:0 0}
+.ui .ev{position:absolute;left:12px;top:10px;font:700 11px Inter;opacity:.7;letter-spacing:.04em}
+.ui h5{margin:84px 0 6px;font:800 40px/1 Inter}
+.ui p{margin:0 22px;font:500 13px/1.35 Inter;opacity:.8}
+.ui .b{margin:18px 20px 0;height:54px;border-radius:10px;background:#C8323C;display:flex;align-items:center;justify-content:center;font:800 19px Inter}
+.ui .b.o{background:transparent;border:2px solid rgba(255,255,255,.35);height:44px;margin-top:10px;font-size:15px}
+.ui .ok{width:84px;height:84px;margin:86px auto 10px;border-radius:50%;background:#22A06B;display:flex;align-items:center;justify-content:center;font:900 52px Inter}
+.ui .face{width:150px;height:180px;margin:62px auto 8px;border-radius:50% 50% 46% 46%;border:4px dashed rgba(255,255,255,.6);overflow:hidden;background:#2A2E44}
+.sect{position:absolute;left:0;top:0;z-index:22;background:var(--charcoal);color:#fff;font:400 24px 'Archivo Black';letter-spacing:.08em;padding:9px 16px 7px;box-shadow:0 0 0 4px #fff,0 6px 8px rgba(40,28,10,.25);white-space:nowrap}
+.sect em{font:20px 'Special Elite';letter-spacing:0;font-style:normal;margin-left:10px;color:#E7DDC6}
+.divide{position:absolute;left:0;top:0;width:30px;height:720px;z-index:19}
+.tagc h3{font-size:28px}
+.tagc .ill{height:196px}
+.tagc p{font-size:19px}
+.tagc p span{font-size:17px}
+.playb{position:absolute;left:50%;top:50%;width:78px;height:78px;margin:-39px 0 0 -39px;border-radius:50%;background:var(--mustard);box-shadow:0 0 0 5px #fff,0 8px 12px rgba(40,28,10,.3);font:30px/78px Inter;text-align:center;color:var(--ink);padding-left:5px;box-sizing:border-box}
+#vplay{position:absolute;inset:0;z-index:40;background:#000;display:none}
+#vplay video{position:absolute;inset:0;width:1920px;height:1080px}
+#game{position:fixed;inset:0;width:100%;height:100%;border:0;display:none;z-index:100;background:#17140f}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg"></div>
+  <div class="news" style="left:1250px;top:120px;width:560px;height:260px;transform:rotate(3deg)"></div>
+  <div class="news" style="left:40px;top:560px;width:460px;height:230px;transform:rotate(-4deg)"></div>
+  <div class="layer" id="L"></div>
+  <div id="vplay"><video id="vid" playsinline preload="auto"></video></div>
+  <div class="grain"></div><div class="vig"></div>
+</div>
+<iframe id="game" allow="autoplay; fullscreen" title="Mini game"></iframe>
+<script src="../games/common.js"></script>
+<script>
+const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
+const L = document.getElementById('L'), frame = document.getElementById('game'), IMG = '../games/assets/img/';
+const BEAT = .531;
+const TAGS = [
+  { k: 'A', isNew: true, title: 'Table allocation', line: 'Move a guest. Who else finds out?', game: 'a', name: 'Same Page' },
+  { k: 'C', isNew: true, title: 'Self check-in kiosk', line: 'Scan your ticket. Badge in seconds.', game: 'c', name: 'Rush Hour' },
+  { k: 'D', isNew: true, title: 'Gold & white text', line: 'Find the speakers in the crowd.', game: 'd', name: 'Spot the Speakers' },
+  { k: 'B', isNew: true, title: 'Full-colour PVC cards', line: 'Snap a photo, print the card on site.', video: 'media/video-b.mp4' },
+  { k: 'E', isNew: false, title: 'Pick your badge box', line: 'Take home badges from real events.', video: 'media/video-e.mp4' },
+];
+const GAMES = TAGS.filter(t => t.game), VIDEOS = TAGS.filter(t => t.video);
+let RUN = 0, screen = '', played = new Set(), hopT = null;
+
+// ---------- pieces ----------
+function torn(y0, jag = 22) {
+  let d = `M0 260 L0 ${y0}`; for (let x = 0; x <= 1920; x += 14 + G.rnd() * 18) d += ` L${x.toFixed(0)} ${(y0 + (G.rnd() - .5) * jag).toFixed(1)}`;
+  return d + ` L1920 ${y0} L1920 260 Z`;
+}
+function ground(y) { const g = $(`<svg id="ground" viewBox="0 0 1920 260"><path fill="#2A2826" d="${torn(34)}"/></svg>`, L); place(g, 0, y); return g; }
+function sun(x, y, r) { const s = $(`<div class="sun" style="width:${r * 2}px;height:${r * 2}px"></div>`, L); place(s, x - r, y - r); return s; }
+function cut(src, x, y, w, r = 0, z = 10) { const i = $(`<img class="cut cutimg" src="${IMG}${src}" alt="" style="width:${w}px;z-index:${z}">`, L); place(i, x, y, r); return i; }
+async function drop(el, x, y, r = 0) { place(el, x, y - 1100, r); await tween(.42, e => place(el, x, y - 1100 * (1 - e), r), 'out'); sfx('paper', -10); }
+const bestOf = g => { const rows = G.lb.load(g.toUpperCase()); return rows[0] || null; };
+function clearScreen() {
+  RUN++; clearInterval(hopT); L.innerHTML = '';
+  G.stage.querySelectorAll('.strip,.stamp,.btn').forEach(e => e.remove());
+  if (vplay && vplay.style.display === 'block' && screen !== 'video') { vid.pause(); vplay.style.display = 'none'; }
+}
+// idle on the board or a chapter: back to the start screen for the next visitor
+let idleT = null;
+const armIdle = () => { clearTimeout(idleT); if (screen === 'board' || screen === 'chapter' || screen === 'videoEnd') idleT = setTimeout(() => { if (screen === 'videoEnd') endVideo({ k: '' }, false); attract(true); }, 30000); };
+addEventListener('pointerdown', armIdle);
+
+// ---------- the start screen ----------
+function attract(reset) {
+  clearScreen(); screen = 'attract'; clearTimeout(idleT);
+  if (reset) played.clear();
+  ground(840); sun(960, 560, 250);
+  const pv = cut('printer-pvc.png', 520, 848 - 492, 400, 0, 10), bp = cut('printer-badge.png', 950, 848 - 394, 430, 0, 11);
+  $('<div class="stamp" style="color:var(--mustard)">BOOTH 01 · ONSITE</div>', L); G.stage.querySelector('#L .stamp').style.transform = 'translate(110px,90px) rotate(-6deg)';
+  const st = $('<div class="strip"><span>Onsite, off the paper.</span><i class="tape" style="left:-34px;top:-6px;transform:rotate(-24deg)"></i><i class="tape" style="right:-34px;bottom:-8px;transform:rotate(-20deg)"></i></div>', L);
+  place(st, 120, 240, -1);
+  const rows = TAGS.filter(t => t.game).map(t => { const b = bestOf(t.game); return `<div><b>${t.k}</b>${t.name}<em>${b ? b.ini + ' · ' + b.label : '–'}</em></div>`; }).join('');
+  const best = $(`<div class="best"><h4>TODAY'S BEST</h4>${rows}</div>`, L); place(best, 1390, 140, 2);
+  const tp = $(`<div style="position:absolute;left:0;top:0;font:30px Special Elite;color:#E7DDC6;z-index:6">${GAMES.length} mini games · ${VIDEOS.length} short videos</div>`, L); place(tp, 120, 1000);
+  const b = button('Tap to start ▸', 800, 900, async () => { await G.audio(); G.music('loop.wav', -18); board(); }, true); L.appendChild(b);
+  // the printers breathe on the beat
+  const run = RUN; let k = 0;
+  hopT = setInterval(() => { if (run !== RUN) return; k++; const s = k % 2 ? 1.015 : 1; pv.style.transform = `translate(520px,${848 - 492 - (s - 1) * 400}px) scale(${s})`; bp.style.transform = `translate(950px,${848 - 394 - (s - 1) * 300}px) scale(${2 - s})`; }, BEAT * 1000);
+}
+
+// ---------- the board ----------
+function illus(t) {
+  if (t.k === 'A') return `<svg viewBox="0 0 280 250" width="220" height="196" style="position:absolute;left:30px;top:0">
+    <rect x="6" y="20" width="200" height="200" fill="#F5EFE1" stroke="#1D1B18" stroke-width="3"/>
+    ${[[50, 70], [110, 70], [170, 70], [50, 150], [110, 150], [170, 150]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="22" fill="#fff" stroke="${i === 4 ? '#E9A923' : '#3B40D8'}" stroke-width="${i === 4 ? 6 : 3}"/>`).join('')}
+    <path d="M110 214 V186 H110 V172" stroke="#E9A923" stroke-width="4" stroke-dasharray="5 6" fill="none"/>
+    <rect x="196" y="70" width="78" height="150" rx="16" fill="#22252C" stroke="#fff" stroke-width="4"/><rect x="204" y="80" width="62" height="130" rx="10" fill="#fff"/>
+    <rect x="204" y="80" width="62" height="18" fill="#2F6BEF"/><text x="235" y="140" text-anchor="middle" font-family="Archivo Black" font-size="34" fill="#1D1B18">4</text>
+    <rect x="210" y="160" width="50" height="16" rx="4" fill="#E9A923"/></svg>`;
+  if (t.k === 'B') return `<img src="${IMG}printer-pvc.png" style="left:80px;top:2px;height:186px" class="cut"><span class="playb">▶</span>`;
+  if (t.k === 'C') return `<img src="${IMG}kiosk.png" style="left:62px;top:4px;width:178px" class="cut">`;
+  if (t.k === 'D') return `<img src="${IMG}badge-white.png" style="left:30px;top:8px;height:172px;transform:rotate(-7deg)" class="cut"><img src="${IMG}badge-gold.png" style="left:128px;top:14px;height:172px;transform:rotate(6deg)" class="cut">`;
+  if (t.k === 'E') return `<img src="${IMG}badge-microsoft.png" style="left:14px;top:22px;height:150px;transform:rotate(-12deg)" class="cut"><img src="${IMG}badge-servicenow.png" style="left:130px;top:22px;height:150px;transform:rotate(12deg)" class="cut"><img src="${IMG}badge-google.png" style="left:72px;top:8px;height:166px" class="cut"><span class="playb">▶</span>`;
+  return `<img src="${IMG}badge-microsoft.png" style="left:10px;top:24px;height:176px;transform:rotate(-12deg)" class="cut"><img src="${IMG}badge-servicenow.png" style="left:150px;top:24px;height:176px;transform:rotate(12deg)" class="cut"><img src="${IMG}badge-google.png" style="left:76px;top:8px;height:190px" class="cut">`;
+}
+async function board(fromGame) {
+  clearScreen(); screen = 'board'; armIdle();
+  const run = RUN;
+  const s = strip('Pick one to see it work.', 90, 40, { rot: -1 });
+  const hg = $(`<div class="sect">GAMES <em>play &amp; beat today's best</em></div>`, L); place(hg, 117, 138, -1);
+  const hv = $(`<div class="sect">VIDEOS <em>21 seconds each</em></div>`, L); place(hv, 1177, 138, 1);
+  const dv = $(`<svg class="divide" viewBox="0 0 30 720"><path fill="#2A2826" d="M8 0 ${Array.from({ length: 37 }, (_, k) => `L${(8 + (G.rnd() - .5) * 8).toFixed(1)} ${k * 20}`).join(' ')} L22 720 ${Array.from({ length: 37 }, (_, k) => `L${(22 + (G.rnd() - .5) * 8).toFixed(1)} ${720 - k * 20}`).join(' ')} Z"/></svg>`, L); place(dv, 1121, 150);
+  const cards = TAGS.map((t, i) => {
+    const b = t.game ? bestOf(t.game) : null, done = played.has(t.k);
+    const c = $(`<div class="tagc${done ? ' done' : ''}${t.video ? ' vid' : ''}"><div class="lt"><b>${t.k}</b>${t.isNew ? '<i>NEW</i>' : ''}</div><h3>${t.title}</h3>
+      <div class="ill">${illus(t)}</div><p><span>${t.game ? 'Game: ' + t.name : 'Video · 21 s'}</span>${t.line}</p>
+      <div class="ft"><div class="go">${done ? '✓ ' + (t.game ? 'Played' : 'Watched') : t.game ? '▸ Play' : '▸ Watch'}</div>
+      <div class="bt">${t.game ? (b ? `Best today: ${b.ini} · ${b.label}` : 'Best today: be the first') : t.k === 'E' ? 'Then pick yours here' : 'Then try it at the booth'}</div></div></div>`, L);
+    // games on the left, videos on the right, a torn line between them
+    const gi = GAMES.indexOf(t), vi = VIDEOS.indexOf(t);
+    const x = t.game ? 117 + gi * 325 : 1177 + vi * 325, y = 215, r = [-1.5, 1, -.5, 1.5, -1][i];
+    c.addEventListener('pointerup', () => { if (screen === 'board') { sfx('click', -10); t.video ? playVideo(t) : chapter(t); } });
+    $(`<i class="tape" style="left:120px;top:-16px;transform:rotate(${r * 4}deg)"></i>`, c);
+    return { c, x, y, r };
+  });
+  // the tags drop in one per eighth note
+  for (const [i, k] of cards.entries()) { if (run !== RUN) return; drop(k.c, k.x, k.y, k.r); await wait(BEAT * 500); }
+  if (run !== RUN) return;
+  const ring = $(`<svg id="hop" viewBox="0 0 400 680"><ellipse cx="200" cy="340" rx="190" ry="330" fill="none" stroke="#E9A923" stroke-width="9" stroke-dasharray="1200" stroke-linecap="round" transform="rotate(-3 200 340)"/></svg>`, L);
+  let h = 0; const hop = () => { const k = cards[h % cards.length]; place(ring, k.x - 35, k.y - 35, 0); h++; };
+  hop(); hopT = setInterval(() => { if (run === RUN) hop(); }, BEAT * 2000);
+  const so = button('Start over', 1640, 940, () => attract(true)); L.appendChild(so);
+  await s;
+}
+
+// ---------- a chapter (a live stand-in until the chapter films are cut) ----------
+const CH = {
+  A: { stamp: 'NEW · TABLE ALLOCATION', lines: ['You check the plan with 3 people…', '…and get back 3 different copies.', 'EventNook: everyone has the right one.', 'Guests find their own seat on NookPass.'] },
+  B: { stamp: 'NEW · FULL-COLOUR PVC', lines: ['Your whole design, printed on site.', "Even each guest's headshot.", 'Credit-card quality. Built to last.'] },
+  C: { stamp: 'NEW · SELF CHECK-IN KIOSK', lines: ['Guests check themselves in.', 'Scan your ticket. The badge prints.', 'PVC? Snap your headshot right there.'] },
+  D: { stamp: 'NEW · GOLD & WHITE TEXT', lines: ['Not just black.', 'Gold and white text that stands out.', 'Badges worth keeping after the event.'] },
+  E: { stamp: 'YOUR BADGE BOX', lines: ['Badges from Google, AWS and Microsoft events.', 'For a client pitch. A keepsake.', 'Ideas for your own event.'] },
+};
+const MF = `<div style="position:relative;width:208px;height:325px;overflow:hidden;background:#FFFFFF;font-family:'Outfit',system-ui,sans-serif;color:#1F2937">
+<div style="position:absolute;right:-46px;top:-46px;width:130px;height:130px;border-radius:50%;background:#2563EB"></div>
+<div style="position:absolute;left:-38px;top:140px;width:76px;height:76px;border-radius:50%;background:#F5B400"></div>
+<svg width="30" height="30" viewBox="0 0 30 30" style="position:absolute;right:12px;top:150px;transform:rotate(14deg)"><path d="M15 2L28 27H2z" fill="#EF4444"/></svg>
+<div style="position:absolute;right:-40px;bottom:-40px;width:112px;height:112px;border-radius:50%;background:#16A34A"></div>
+<div style="position:absolute;inset:0;box-sizing:border-box;padding:28px 14px 14px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:6px"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:2px;width:14px">
+<div style="width:6px;height:6px;border-radius:50%;background:#2563EB"></div><div style="width:6px;height:6px;border-radius:50%;background:#EF4444"></div>
+<div style="width:6px;height:6px;border-radius:50%;background:#F5B400"></div><div style="width:6px;height:6px;border-radius:50%;background:#16A34A"></div></div>
+<div style="font-size:13px;font-weight:800;letter-spacing:-0.02em;line-height:1">makers fest <span style="color:#2563EB">'26</span></div></div>
+<div style="margin-top:16px;align-self:center;width:104px;height:104px;border-radius:50%;padding:4px;box-sizing:border-box;background:conic-gradient(#2563EB 0 25%,#EF4444 0 50%,#F5B400 0 75%,#16A34A 0)">
+<img src="${IMG}headshot-lucas-colour.png" alt="" style="display:block;width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #FFFFFF;box-sizing:border-box"></div>
+<div style="margin-top:10px;font-size:19px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;text-align:center">Lucas Moreau</div>
+<div style="margin-top:3px;font-size:9px;color:#4B5563;text-align:center">Developer Advocate</div>
+<div style="margin-top:1px;font-size:9px;font-weight:600;color:#2563EB;text-align:center">Pixelwork Labs</div>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px"><div style="display:flex;flex-direction:column;gap:6px">
+<div style="align-self:flex-start;padding:4px 10px;border-radius:999px;background:#EF4444;color:#FFFFFF;font-weight:700;font-size:8px;letter-spacing:0.1em">SPEAKER</div>
+<div style="font-size:7.5px;line-height:1.4;font-weight:500;color:#374151">12 DEC 2026<br>SINGAPORE</div></div>
+<div style="width:48px;height:48px;padding:4px;box-sizing:border-box;border-radius:10px;background:#FFFFFF;border:2px solid #1F2937;
+ background-image:repeating-conic-gradient(#1F2937 0 25%,#fff 0 50%);background-size:8px 8px;background-clip:content-box"></div></div></div></div>`;
+// the kiosk (the real tablet + printer cut-out) with its welcome screen drawn in perspective over the tablet
+const KQ = [[54, 177], [273, 40], [551, 488], [387, 716]], KSLOT = [745, 515];
+function homography(el, w, h, P) {
+  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = P;
+  const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3, dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, den = dx1 * dy2 - dx2 * dy1;
+  const g = (sx * dy2 - dx2 * sy) / den, h2 = (dx1 * sy - sx * dy1) / den;
+  const a = x1 - x0 + g * x1, b = x3 - x0 + h2 * x3, d = y1 - y0 + g * y1, e = y3 - y0 + h2 * y3;
+  el.style.transform = `matrix3d(${a / w},${d / w},0,${g / w},${b / h},${e / h},0,${h2 / h},0,0,1,0,${x0},${y0},0,1)`;
+}
+const KUI = {
+  welcome: () => `<div class="ev">EventNook NEXT</div><h5>Welcome</h5><p>Scan the QR code on your ticket to check in.</p><div class="b">Scan your ticket</div><div class="b o">Find my registration</div>`,
+  ok: n => `<div class="ev">EventNook NEXT</div><div class="ok">✓</div><h5 style="margin:0 0 8px;font-size:30px">Hi, ${n}!</h5><p>Printing your badge…</p>`,
+  photo: () => `<div class="ev">EventNook NEXT</div><div class="face"></div><h5 style="margin:0 0 6px;font-size:26px">Let's take your photo</h5><div class="b">Take my photo</div>`,
+  shot: o => `<div class="ev">EventNook NEXT</div><div class="face" style="border-style:solid;border-color:#22A06B">${G.headSVG(o, '#2A2E44')}</div><h5 style="margin:0 0 6px;font-size:26px">Looks great!</h5><div class="b">Check in</div>`,
+};
+async function hero(k, run, step) {          // step 0: lands with the first line; 1 and 2: something new with each line
+  if (k === 'A') {
+    const P = [['CLIENT', 4, -5, { skin: '#F2C7A5', shirt: '#7A6250', hair: 'bob', hairC: '#2B2230' }], ['MANAGER', 7, 3, { skin: '#8D5A3B', shirt: '#3A3836', hair: 'short', hairC: '#1E1A1A', glasses: true }],
+      ['VENUE', 2, -2, { skin: '#E9B892', shirt: '#4A5568', hair: 'curly', hairC: '#3A2A22' }]];
+    if (step === 0) {                          // three paper copies, one from each person you checked with
+      for (const [i, [who, t, r, look]] of P.entries()) {
+        const c = $(`<div class="acopy" style="position:absolute;left:0;top:0;width:330px;height:430px;background:#FBF8F1;box-shadow:0 0 0 5px #fff,0 14px 22px rgba(40,28,10,.28);z-index:${10 + i};padding:16px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:10px;font:400 20px 'Archivo Black'"><i style="width:46px;height:46px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 3px #fff,0 0 0 5px #1D1B18">${G.headSVG(look)}</i>${who}'S COPY</div>
+          <svg viewBox="0 0 300 200" style="width:298px;height:200px;margin-top:12px">${[[50, 60], [150, 60], [250, 60], [50, 150], [150, 150], [250, 150]].map(([x, y], j) => `<circle cx="${x}" cy="${y}" r="30" fill="#fff" stroke="#1D1B18" stroke-width="3"/><text x="${x}" y="${y + 9}" text-anchor="middle" font-family="Archivo Black" font-size="24">${[1, 2, 4, 5, 6, 7][j]}</text>`).join('')}
+            <path d="M20 190 q60 -30 110 -6" stroke="#C8321E" stroke-width="4" fill="none"/></svg>
+          <div style="font:24px 'Special Elite';margin-top:6px">Tan W. (VIP) →</div><div style="font:400 64px/1 'Archivo Black'">Table ${t}</div></div>`, L);
+        c.classList.add('acp'); await drop(c, 960 + i * 300, 230 + i * 40, r);
+      }
+    } else if (step === 1) {
+      L.querySelectorAll('.acp').forEach((c, i) => setTimeout(() => { const q = $('<div class="aq" style="position:absolute;left:0;top:0;z-index:30;color:#C8321E;font:400 90px Archivo Black">?</div>', L); place(q, 1200 + i * 300, 560 + i * 40, -10 + i * 8); sfx('pop', -12); G.boing(); }, i * 260));
+      await wait(800); L.appendChild(await stamp('WHICH ONE IS RIGHT?', 980, 760, 'var(--red)', -5));
+    } else if (step === 2) {                   // the paper is crumpled away, one live plan lands
+      const old = [...L.querySelectorAll('.acp,.aq,.stamp')].filter(e => !/TABLE ALLOCATION/.test(e.textContent));
+      sfx('scribble', -10); sfx('rip', -12);
+      await tween(.4, e => old.forEach((o, i) => { o.style.transform = `translate(${1300 + i * 40 - 300 * e}px,${400 + 700 * e}px) rotate(${200 * e}deg) scale(${1 - .8 * e})`; }), 'in');
+      old.forEach(o => o.remove());
+      const p = $(`<svg class="cutimg" viewBox="0 0 640 440" style="width:640px;height:440px;z-index:10"><rect x="8" y="8" width="624" height="424" fill="#FFFFFF" stroke="#fff" stroke-width="12"/>
+        <rect x="8" y="8" width="624" height="424" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/><rect x="40" y="30" width="560" height="34" rx="6" fill="#E8E9FB"/>
+        <text x="320" y="54" text-anchor="middle" font-family="Inter" font-weight="700" font-size="18" fill="#555">STAGE</text>
+        ${[[120, 150], [250, 150], [380, 150], [510, 150], [120, 300], [250, 300], [380, 300], [510, 300]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="44" fill="#fff" stroke="${i === 3 ? '#E9A923' : '#3B40D8'}" stroke-width="${i === 3 ? 7 : 4}"/><text x="${x}" y="${y + 12}" text-anchor="middle" font-family="Archivo Black" font-size="32" fill="#3B40D8">${i + 1}</text>`).join('')}
+        <path id="way" d="M315 430 V225 H510 V200" stroke="#E9A923" stroke-width="7" stroke-dasharray="10 10" fill="none" stroke-linecap="round"/></svg>`, L);
+      p.style.boxShadow = '0 16px 26px rgba(40,28,10,.3)'; await drop(p, 1000, 260, -1); p.querySelector('#way').style.opacity = 0;
+      for (const [i, [who, , , look]] of P.entries()) {           // the same three people, all looking at the same plan
+        const t = $(`<div style="position:absolute;left:0;top:0;z-index:12;display:flex;align-items:center;gap:8px;background:#fff;border-radius:999px;padding:5px 14px 5px 5px;font:700 17px Inter;box-shadow:0 0 0 3px #3B40D8,0 6px 10px rgba(40,28,10,.2)"><i style="width:38px;height:38px;border-radius:50%;overflow:hidden">${G.headSVG(look)}</i>${who} · Table 4 ✓</div>`, L);
+        place(t, 975 + i * 210, 715, 0); sfx('pop', -14); await wait(160);
+      }
+    } else {
+      const ph = $(`<div class="ph"><div class="scr"><div style="background:#2F6BEF;color:#fff;font:700 17px Inter;padding:12px 14px">NookPass · My seat</div>
+        <div style="padding:14px 16px 0;font:600 16px Inter;color:#666">Your table</div><div style="padding:0 16px;font:900 92px/1 'Archivo Black'">4</div>
+        <div style="margin:14px 16px;background:#E9A923;border-radius:12px;padding:12px;text-align:center;font:700 18px Inter">Show me the way</div></div></div>`, L);
+      place(ph, 2000, 300, 4); sfx("whoosh-short", -12); await tween(.3, e => place(ph, 2000 - 345 * e, 300, 4), "out"); G.ping();
+      const w = L.querySelector('#way'); if (!w) return; const len = w.getTotalLength(); w.style.opacity = 1; w.style.strokeDasharray = len; w.style.strokeDashoffset = len;
+      sfx('scribble', -14); await tween(1, e => w.style.strokeDashoffset = len * (1 - e), 'linear'); w.style.strokeDasharray = '10 10'; w.style.strokeDashoffset = 0;
+    }
+  } else if (k === 'B') {
+    if (step === 0) { const p = cut('printer-pvc.png', 1060, 860 - 553, 450, 0, 10); p.id = 'hp'; await drop(p, 1060, 860 - 553, 0); }
+    else if (step === 1) {
+      G.whirr(.8, -14); await wait(800); if (run !== RUN) return;
+      const c = $(`<div class="pvc">${MF}</div>`, L); const ox = 1060 + 390 * .437 - 30, oy = 860 - 553 + 1010 * .437 - 20;
+      for (let i = 0; i < 14; i++) { const k2 = $(`<div class="conf" style="background:${['#2563EB', '#EF4444', '#F5B400', '#16A34A'][i % 4]}"></div>`, L), a = -Math.PI * (.1 + .8 * i / 13), r = 160 + G.rnd() * 120;
+        tween(.6, e => { place(k2, ox + Math.cos(a) * r * e, oy + Math.sin(a) * r * e + 160 * e * e, 220 * e); k2.style.opacity = 1 - e * e; }).then(() => k2.remove()); }
+      sfx('sparkle', -8); sfx('pop', -8);
+      await tween(.45, e => place(c, ox + (1470 - ox) * e, oy + (190 - oy) * e - Math.sin(e * Math.PI) * 120, 6 * e, .3 + 1.05 * e), 'inout');
+    } else {
+      const r = $(`<svg class="cutimg" viewBox="0 0 220 220" style="width:220px;height:220px;z-index:22"><circle cx="110" cy="110" r="96" fill="none" stroke="#E9A923" stroke-width="9" stroke-dasharray="620" stroke-dashoffset="620" stroke-linecap="round"/></svg>`, L);
+      place(r, 1600 - 110, 330 - 110, 0); const ci = r.querySelector('circle'); sfx('scribble', -12); await tween(.4, e => ci.setAttribute('stroke-dashoffset', 620 * (1 - e)));
+    }
+  } else if (k === 'C') {
+    const S = .62, X = 1060, Y = 860 - 932 * S + 12;
+    if (step === 0) {
+      const kz = $(`<div class="kiosk"><img class="cut" src="${IMG}kiosk.png" alt=""><div class="ui"></div></div>`, L); kz.id = 'kz';
+      kz._ui = kz.querySelector('.ui'); homography(kz._ui, 300, 400, KQ); kz._ui.innerHTML = KUI.welcome();
+      place(kz, X, Y - 1100); kz.style.transform += ` scale(${S})`;
+      await tween(.42, e => { kz.style.transform = `translate(${X}px,${Y - 1100 * (1 - e)}px) scale(${S})`; }, 'out'); sfx('paper', -10);
+    } else if (step === 1) {
+      const kz = L.querySelector('#kz'); if (!kz) return;
+      const ph = $('<div style="position:absolute;left:0;top:0;width:70px;height:118px;border-radius:14px;background:#22252C;box-shadow:0 0 0 4px #fff;z-index:12"><div style="position:absolute;inset:16px 8px;background:#fff repeating-conic-gradient(#1D1B18 0 25%,#fff 0 50%);background-size:10px 10px;border-radius:3px"></div></div>', L);
+      sfx('whoosh-short', -14); await tween(.3, e => place(ph, 1700 - 400 * e, 560 - 80 * e, -14), 'out');
+      G.beep(); kz._ui.innerHTML = KUI.ok('Lucas'); await wait(250); ph.remove();
+      const f = $(`<div style="position:absolute;left:0;top:0;width:140px;height:190px;overflow:hidden;z-index:11"><div style="position:absolute;left:8px;top:-180px;width:124px;height:170px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);text-align:center;padding-top:40px;box-sizing:border-box;font:800 17px Inter">LUCAS M.<div style="font:600 11px Inter;letter-spacing:.14em;color:#555;margin-top:5px">SPEAKER</div></div></div>`, L);
+      place(f, X + KSLOT[0] * S - 70, Y + KSLOT[1] * S); const bd = f.firstChild; G.whirr(.6, -14);
+      await tween(.6, e => bd.style.top = (-180 + 180 * e) + 'px', 'linear'); sfx('pop', -12);
+    } else {
+      const kz = L.querySelector('#kz'); if (!kz) return;
+      kz._ui.innerHTML = KUI.photo(); sfx('pop', -14); await wait(700); if (run !== RUN) return;
+      const fl = $('<div style="position:absolute;inset:0;background:#fff;z-index:60;pointer-events:none"></div>', L); sfx('click', -4); setTimeout(G.snip, 50);
+      await tween(.4, e => fl.style.opacity = 1 - e, 'out', false); fl.remove();
+      kz._ui.innerHTML = KUI.shot({ skin: '#E9B892', shirt: '#4A5568', hair: 'curly', hairC: '#3A2A22', glasses: true }); sfx('sparkle', -12);
+    }
+  } else if (k === 'D') {
+    if (step === 0) { const w = cut('badge-white.png', 1040, 230, 320, -6, 10); await drop(w, 1040, 230, -6); }
+    else if (step === 1) { const g = cut('badge-gold.png', 1400, 250, 320, 5, 11); g.id = 'gb'; await drop(g, 1400, 250, 5); }
+    else {
+      const sh = $(`<div style="position:absolute;left:0;top:0;width:120px;height:440px;z-index:12;background:linear-gradient(90deg,transparent,rgba(255,240,190,.7),transparent);mix-blend-mode:screen;pointer-events:none"></div>`, L);
+      sfx('sparkle', -8); await tween(.7, e => place(sh, 1380 + 360 * e, 280, 12), 'inout'); sh.remove();
+    }
+  } else {
+    const B = ['apple', 'microsoft', 'paloalto', 'servicenow', 'google'];
+    if (step === 0) {
+      for (const [i, n] of B.entries()) { const im = cut(`badge-${n}.png`, 1190, 360, 250, 0, 10 + i); im.style.transformOrigin = '50% 120%'; im.dataset.i = i; im.classList.add('fan'); }
+      sfx('paper', -10);
+    } else if (step === 1) {
+      const fans = [...L.querySelectorAll('.fan')]; sfx('flip', -10);
+      await tween(.5, e => fans.forEach(im => place(im, 1190 + (im.dataset.i - 2) * 120 * e, 360 + Math.abs(im.dataset.i - 2) * 30 * e, (im.dataset.i - 2) * 16 * e)), 'back');
+    } else {
+      L.appendChild(await stamp('PICK YOURS AT THE COUNTER', 600, 745, 'var(--mustard)', -4));
+    }
+  }
+}
+async function chapter(t) {
+  clearScreen(); screen = 'chapter'; armIdle(); const run = RUN;
+  ground(860);
+  if (!t.game) played.add(t.k);
+  const c = CH[t.k];
+  stamp(c.stamp, 90, 110, t.isNew ? 'var(--red)' : 'var(--mustard)', -4).then(s => L.appendChild(s));
+  const pb = t.game ? button(`Play ${t.name} ▸`, 90, 930, () => openGame(t), true) : null; if (pb) L.appendChild(pb);
+  L.appendChild(button('Back to the board', pb ? 90 + pb.offsetWidth + 34 : 90, 930, () => board(), !pb));
+  await hero(t.k, run, 0); if (run !== RUN) return;
+  for (let i = 0; i < c.lines.length; i++) {
+    const s = await strip(c.lines[i], 90, 300 + i * 100, { rot: [-1, .8, -.6, .5][i] }); if (run !== RUN) return; L.appendChild(s);
+    if (i) { await hero(t.k, run, i); if (run !== RUN) return; }
+    await wait(500);
+  }
+}
+
+// ---------- a video (B and E) ----------
+const vplay = document.getElementById('vplay'), vid = document.getElementById('vid');
+function playVideo(t) {
+  clearScreen(); screen = 'video'; clearTimeout(idleT); const run = RUN;
+  if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
+  vplay.style.display = 'block'; vid.src = t.video; vid.currentTime = 0; vid.play().catch(() => {});
+  const back = button('✕ Back', 1660, 26, () => endVideo(t, false)); back.style.zIndex = 46; back.classList.add('vbtn'); back.style.font = "400 26px 'Archivo Black'"; back.style.padding = '14px 22px';
+  vid.onended = () => {
+    if (run !== RUN) return; played.add(t.k); back.remove(); armIdle(); screen = 'videoEnd';
+    const again = button('Watch again', 600, 900, () => { G.stage.querySelectorAll('.vbtn').forEach(b => b.remove()); playVideo(t); }); again.classList.add('vbtn'); again.style.zIndex = 46;
+    const bb = button('Back to the board ▸', 960, 900, () => endVideo(t, true), true); bb.classList.add('vbtn'); bb.style.zIndex = 46;
+  };
+}
+function endVideo(t, watched) {
+  if (watched) played.add(t.k);
+  vid.pause(); vid.removeAttribute('src'); vid.load(); vplay.style.display = 'none';
+  G.stage.querySelectorAll('.vbtn').forEach(b => b.remove());
+  if (G.musicGain) tween(.6, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * e, 'out', false);
+  board();
+}
+
+// ---------- a game ----------
+function openGame(t) {
+  screen = 'game'; clearTimeout(idleT);
+  if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
+  frame.src = `../games/${t.game}/`; frame.style.display = 'block'; frame.focus();
+}
+function closeGame() {
+  frame.style.display = 'none'; frame.src = 'about:blank';
+  if (G.musicGain) tween(.6, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * e, 'out', false);
+}
+addEventListener('message', e => {
+  if (!e.data || screen !== 'game') return;
+  if (e.data.type === 'game-done') { played.add(e.data.game); closeGame(); board(); }
+  if (e.data.type === 'game-idle') { closeGame(); attract(true); }
+});
+attract();
+</script>
+</body>
+</html>

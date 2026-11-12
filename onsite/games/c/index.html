@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rush Hour</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../common.css">
+<style>
+/* Mini game C · "Rush Hour": check in a queue. First at a staffed desk, where every guest has to be found by name in a
+   list of look-alike names before their badge prints. Then at three self check-in kiosks: one scan and the badge prints
+   right there. Last, a PVC kiosk where the guest snaps their own headshot and the Primacy prints their card. */
+#crowd{position:absolute;inset:0;z-index:10;pointer-events:none}
+#desk{position:absolute;left:30px;top:770px;width:770px;height:340px;z-index:14;background:#6E5B47;box-shadow:0 0 0 6px #fff,0 14px 24px rgba(40,28,10,.3);transform:rotate(-.4deg)}
+#desk:before,#table:before{content:'';position:absolute;left:0;right:0;top:0;height:24px;background:#8A7358}
+#table{position:absolute;left:20px;top:752px;width:1300px;height:360px;z-index:14;background:#6E5B47;box-shadow:0 0 0 6px #fff,0 14px 24px rgba(40,28,10,.3);display:none}
+#scene{position:absolute;inset:0;z-index:15}
+.printer{position:absolute;left:0;top:0;z-index:15}
+#laptop{position:absolute;left:70px;top:590px;width:250px;height:170px;z-index:15}
+#laptop .lid{position:absolute;left:14px;top:0;width:222px;height:150px;background:#22252C;border-radius:10px 10px 2px 2px;box-shadow:0 0 0 4px #fff}
+#laptop .lid i{position:absolute;inset:9px;background:#fff;border-radius:3px;background-image:repeating-linear-gradient(0deg,#fff 0 13px,#e3e5ee 13px 15px)}
+#laptop .base{position:absolute;left:0;top:150px;width:250px;height:16px;background:#3A3D44;border-radius:0 0 10px 10px;box-shadow:0 0 0 4px #fff}
+/* the attendee list at the desk */
+#list{position:absolute;left:520px;top:150px;width:820px;z-index:30;background:#fff;box-shadow:0 0 0 6px #fff,0 0 0 26px #22252C,0 0 0 30px #fff,0 20px 34px rgba(40,28,10,.35);border-radius:4px;overflow:hidden;transform-origin:0 100%}
+#list .hd{background:var(--onsite);color:#fff;font:700 22px Inter;padding:12px 18px;display:flex;gap:12px;align-items:center}
+#list .hd i{font-style:normal;font:600 15px Inter;background:rgba(255,255,255,.2);border-radius:7px;padding:4px 10px}
+#list .hd b{margin-left:auto;font:600 17px Inter;opacity:.85}
+#list .row{display:flex;align-items:center;gap:16px;height:58px;padding:0 20px;border-top:1px solid #E5E7EB;font:600 26px Inter;color:#1F2937;cursor:pointer}
+#list .row em{margin-left:auto;font-style:normal;font:600 15px Inter;color:#6B7280}
+#list .row.no{background:#FDE2DE;color:var(--red)}
+#list .row.yes{background:#D9F2E4}
+.say{position:absolute;left:0;top:0;z-index:26;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:10px 16px 8px;font:24px 'Special Elite';white-space:nowrap;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+.say:after{content:'';position:absolute;left:34px;bottom:-16px;border:9px solid transparent;border-top-color:var(--ink)}
+/* the badge coming out of a printer */
+.feed{position:absolute;left:0;top:0;overflow:hidden;z-index:16;pointer-events:none}
+.bdg{position:absolute;left:6px;top:0;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.18),0 5px 8px rgba(40,28,10,.25);box-sizing:border-box;text-align:center;font:800 15px/1.1 Inter;color:var(--ink)}
+.bdg i{display:block;font:600 10px Inter;letter-spacing:.12em;color:#555;margin-top:4px;font-style:normal}
+.bdg .qr{width:36px;height:36px;margin:10px auto 0;background:repeating-conic-gradient(#1D1B18 0 25%,#fff 0 50%);background-size:8px 8px;border:2px solid #1D1B18}
+/* a kiosk: the real tablet + printer cut-out, its screen drawn in perspective over the tablet */
+.kiosk{position:absolute;left:0;top:0;width:893px;height:932px;transform-origin:0 0;z-index:15;cursor:pointer}
+.kiosk img{position:absolute;left:0;top:0;width:893px;height:932px}
+.kiosk.tab,.kiosk.tab img{width:355px;height:519px}
+.ui{position:absolute;left:0;top:0;width:300px;height:400px;background:#0E1124;color:#fff;font-family:Inter;overflow:hidden;text-align:center;transform-origin:0 0}
+.ui .ev{position:absolute;left:12px;top:10px;font:700 11px Inter;opacity:.7;letter-spacing:.04em}
+.ui h5{margin:84px 0 6px;font:800 40px/1 Inter}
+.ui p{margin:0 22px;font:500 13px/1.35 Inter;opacity:.8}
+.ui .b{margin:18px 20px 0;height:54px;border-radius:10px;background:#C8323C;display:flex;align-items:center;justify-content:center;font:800 19px Inter}
+.ui .b.o{background:transparent;border:2px solid rgba(255,255,255,.35);height:44px;margin-top:10px;font-size:15px}
+.ui .ok{width:84px;height:84px;margin:86px auto 10px;border-radius:50%;background:#22A06B;display:flex;align-items:center;justify-content:center;font:900 52px Inter}
+.ui .face{width:150px;height:180px;margin:62px auto 8px;border-radius:50% 50% 46% 46%;border:4px dashed rgba(255,255,255,.6);overflow:hidden;background:#2A2E44}
+/* the tap target: a pulsing orange circle on the kiosk screen with a TAP tag */
+.tapme{position:absolute;left:0;top:0;z-index:24;cursor:pointer}
+.tapme .rg{position:absolute;border:12px dashed var(--mustard);border-radius:50%;background:rgba(233,169,35,.18);box-shadow:0 0 0 4px rgba(255,255,255,.55)}
+.tapme .tg{position:absolute;background:var(--mustard);color:var(--ink);font:400 28px 'Archivo Black';padding:10px 18px 8px;border-radius:10px;white-space:nowrap;
+  box-shadow:0 0 0 4px #fff,0 6px 10px rgba(40,28,10,.25)}
+.tapme .tg:after{content:'';position:absolute;left:24px;bottom:-24px;border:13px solid transparent;border-top-color:var(--mustard)}
+.qrb{position:absolute;left:0;top:0;width:56px;height:94px;border-radius:12px;background:#22252C;box-shadow:0 0 0 4px #fff,0 6px 8px rgba(40,28,10,.3);z-index:24}
+.qrb:after{content:'';position:absolute;inset:14px 7px;background:#fff repeating-conic-gradient(#1D1B18 0 25%,#fff 0 50%);background-size:8px 8px;border-radius:3px}
+.pvc{position:absolute;left:0;top:0;width:208px;height:325px;transform-origin:0 0;border-radius:12px;overflow:hidden;box-shadow:0 0 0 3px #fff,0 8px 12px rgba(40,28,10,.22);z-index:22}
+.conf{position:absolute;left:0;top:0;width:18px;height:18px;z-index:21;box-shadow:0 0 0 3px #fff}
+#flash{position:absolute;inset:0;background:#fff;z-index:70;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg"></div>
+  <div class="news" style="left:1250px;top:380px;width:600px;height:300px;transform:rotate(3deg)"></div>
+  <div class="news" style="left:40px;top:150px;width:420px;height:220px;transform:rotate(-4deg)"></div>
+  <div id="crowd"></div>
+  <div id="desk"></div><div id="table"></div>
+  <div id="scene"></div>
+  <div id="flash"></div>
+  <div class="grain"></div><div class="vig"></div>
+</div>
+<script src="../common.js"></script>
+<script>
+const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
+const crowd = document.getElementById('crowd'), scene = document.getElementById('scene');
+const ROUND = 15, EVERY = 2000, S = .72, IMG = '../assets/img/';
+// guests, and the look-alike names a desk has to tell them apart from
+const PEOPLE = [
+  ['Tan Wei Ling', 'Tan Wei Lin', 'Tan Mei Ling', 'Tang Wei Ling', 'Tan Wai Ling', 'Teo Wei Ling', 'Tan Wei Liang', 'Tan Hui Ling'],
+  ['Priya Nair', 'Priya Nayar', 'Priya Naidu', 'Pria Nair', 'Priyanka Nair', 'Divya Nair', 'Priya Menon', 'Riya Nair'],
+  ['Ahmad Tahir', 'Ahmad Taher', 'Ahmed Tahir', 'Ahmad Tamin', 'Hamad Tahir', 'Ahmad Rahim', 'Ahmad Tariq', 'Amad Tahir'],
+  ['Sarah Lim', 'Sara Lim', 'Sarah Lin', 'Sarah Lam', 'Sarah Liew', 'Clara Lim', 'Sarah Low', 'Sasha Lim'],
+  ['Lee Jun Hao', 'Lee Jun Hau', 'Li Jun Hao', 'Lee Jin Hao', 'Lee Jun Kai', 'Lee Jian Hao', 'Leo Jun Hao', 'Lee Yun Hao'],
+  ['Nurul Aisyah', 'Nurul Aishah', 'Nur Aisyah', 'Nurul Asyikin', 'Nurul Ain', 'Nurul Atiqah', 'Noor Aisyah', 'Nurul Alisya'],
+  ['Ben Ong', 'Ben Ang', 'Benny Ong', 'Ken Ong', 'Ben Ow', 'Bernard Ong', 'Ben Oon', 'Glen Ong'],
+  ['Grace Teo', 'Grace Tay', 'Grace Toh', 'Gracie Teo', 'Grace Tee', 'Joyce Teo', 'Grace Tan', 'Grace Seow'],
+  ['Ravi Shankar', 'Ravi Sankar', 'Ravi Shekar', 'Ravin Shankar', 'Ravi Sharma', 'Rafi Shankar', 'Ravi Kumar', 'Ravi Shanker'],
+  ['Kenji Mori', 'Kenji Moriya', 'Kenta Mori', 'Kenji Muro', 'Kenji Morita', 'Koji Mori', 'Kenji Miura', 'Kenichi Mori'],
+];
+let RUN = 0, Q = [], made = 0, over = false, overP, endRound, arrivals, watch, stats = [], hud = {}, mode = 'desk';
+
+// ---------- people and the queue ----------
+const D = { x: 900, floor: 1020 };                          // where the guest stands at the desk
+const QX = () => mode === 'desk' ? D.x : 1420;              // where the queue starts
+const FLOOR = () => mode === 'desk' ? D.floor : 1070;
+function newGuest(fromX = 2060) {
+  const i = made++, g = G.person({ ...G.look(i + 3), s: S }, crowd);
+  g._names = PEOPLE[i % PEOPLE.length]; g._name = g._names[0];
+  G.at(g, fromX, FLOOR()); Q.push(g); layout(); return g;
+}
+function layout() {
+  const span = mode === 'desk' ? 960 : 470, gap = Math.min(mode === 'desk' ? 140 : 110, span / Math.max(1, Q.length - 1));
+  Q.forEach((g, i) => { g.style.zIndex = 100 - i; const x = QX() + i * gap; if (Math.abs(g._x - x) > 2 || Math.abs(g._y - FLOOR()) > 2) g._arrive = G.walk(g, x, FLOOR(), 520); });
+  setHud();
+}
+function setHud() {
+  if (!hud.q) return;
+  hud.q.innerHTML = `Queue<b>${Q.length}</b>`; hud.d.innerHTML = `Checked in<b>${hud.done}</b>`;
+  hud.p.innerHTML = `Per guest<b>${hud.done ? ((performance.now() - hud.t0) / 1000 / hud.done).toFixed(1) + ' s' : '–'}</b>`;
+}
+function makeHud() {
+  hud = { done: 0, t0: performance.now(), d: $('<div class="hud"></div>'), q: $('<div class="hud"></div>'), p: $('<div class="hud"></div>') };
+  place(hud.d, 1430, 22, -1); place(hud.q, 1430, 84, 1); place(hud.p, 1430, 146, -.5); setHud();
+}
+const chest = g => ({ x: g._x, y: g._y - 158 * g._s });
+function badgeOn(g) {
+  g.querySelector('.slot').innerHTML = '<path d="M-14 -92 L-8 -34 M14 -92 L8 -34" stroke="#1d1d2b" fill="none" style="stroke-width:3"/>'
+    + '<rect x="-26" y="-34" width="52" height="68" rx="3" fill="#fff"/><rect x="-16" y="-18" width="32" height="5" fill="#1d1d2b"/><rect x="-10" y="8" width="20" height="20" fill="#1d1d2b"/>';
+  sfx('sparkle', -20);
+}
+// a badge slides out of a slot, then flies to the guest's chest
+async function printTo(g, sx, sy, w = 112, h = 150) {
+  const f = $(`<div class="feed" style="width:${w + 12}px;height:${h + 10}px"><div class="bdg" style="width:${w}px;height:${h}px;padding-top:${h * .22}px">${g._name.toUpperCase()}<i>DELEGATE</i><div class="qr"></div></div></div>`, scene);
+  place(f, sx - (w + 12) / 2, sy); const b = f.firstChild; G.whirr(.6);
+  await tween(.6, e => { b.style.transform = `translateY(${-h + h * e}px)`; }, 'linear');
+  const x0 = f._x, y0 = f._y, c = chest(g), tx = c.x - (w + 12) / 2, ty = c.y - (h + 10) / 2;
+  sfx('whoosh-short', -18);
+  await tween(.3, e => place(f, x0 + (tx - x0) * e, y0 + (ty - y0) * e - Math.sin(e * Math.PI) * 60, 0, 1 - .55 * e), 'inout');
+  f.remove(); badgeOn(g);
+}
+
+// ---------- round 1: a staffed desk ----------
+function say(g, text) { const s = $(`<div class="say">${text}</div>`); place(s, g._x + 56, g._y - 420 * g._s - 4, -1.5); sfx('pop', -16); return s; }
+function findName(g) {                // the desk looks the guest up in a list of look-alike names
+  return new Promise(res => {
+    const rows = g._names.slice().sort();
+    const L = $(`<div id="list"><div class="hd">eventnook <i>Check-in</i> Attendee list<b>${rows.length} of 1,240 · “${g._name.split(' ')[0]}”</b></div>
+      ${rows.map(n => `<div class="row">${n}<em>${['Delegate', 'Speaker', 'Delegate', 'Media', 'Delegate', 'VIP'][n.length % 6]}</em></div>`).join('')}</div>`);
+    L.style.transform = 'scale(.2)'; tween(.22, e => L.style.transform = `scale(${.2 + .8 * e})`, 'back'); sfx('flip', -14);
+    L.querySelectorAll('.row').forEach(r => r.addEventListener('pointerup', async () => {
+      if (L._done) return;
+      if (r.firstChild.textContent === g._name) {
+        L._done = true; r.classList.add('yes'); G.ding(); await wait(220);
+        await tween(.16, e => L.style.transform = `scale(${1 - .8 * e})`, 'in'); L.remove(); res(true);
+      } else { r.classList.add('no'); G.boing(); g._wrong = (g._wrong || 0) + 1; setTimeout(() => r.classList.remove('no'), 500); }
+    }));
+    findName.cancel = () => L.remove();
+  });
+}
+async function deskRound() {
+  const run = RUN; mode = 'desk'; over = false;
+  document.getElementById('desk').style.display = ''; document.getElementById('table').style.display = 'none'; crowd.style.zIndex = 10;
+  scene.innerHTML = '';
+  $(`<div id="laptop"><div class="lid"><i></i></div><div class="base"></div></div>`, scene);
+  const pr = $(`<img class="printer cut" src="${IMG}printer-badge.png" alt="" style="width:430px">`, scene); place(pr, 330, 396);
+  Q.forEach(g => g.remove()); Q = []; made = 0;
+  for (let i = 0; i < 6; i++) { const g = newGuest(D.x + 140 * i + 40); G.at(g, D.x + 140 * i, D.floor); }
+  layout(); makeHud();
+  const s = await strip('The old way: one desk. Find each guest by name.', 90, 40, { rot: -1 }); if (run !== RUN) return;
+  overP = new Promise(r => endRound = r);
+  hud.t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
+  arrivals = setInterval(() => { if (Q.length < 18) newGuest(); }, EVERY);
+  IDLE.arm();                                              // the instruction stays up for the whole round
+  let wrong = 0;
+  while (!over) {
+    const g = Q[0]; if (!g) { await Promise.race([wait(300), overP]); continue; }
+    await Promise.race([g._arrive, overP]); if (over || run !== RUN) break;
+    const b = say(g, `Hi, I'm ${g._name}.`);
+    const r = await Promise.race([findName(g), overP.then(() => null)]); b.remove();
+    if (r === null) { findName.cancel(); break; }
+    wrong += g._wrong || 0;
+    hud.done++; Q.shift(); layout();
+    await printTo(g, 604, 674, 112, 150);                   // one desk: print, hand it over, then the next guest
+    G.walk(g, -160, D.floor, 560).then(() => g.remove());
+  }
+  if (run !== RUN) return;
+  clearInterval(arrivals); watch.stop(); unstrip(s);
+  stats.push({ done: hud.done, q: Q.length, per: hud.done ? (ROUND / hud.done).toFixed(1) : '–', wrong });
+  await wait(300); return run;
+}
+
+// ---------- round 2: three self check-in kiosks ----------
+const KS = .36, KQ = [[54, 177], [273, 40], [551, 488], [387, 716]], KSLOT = [745, 515];
+function homography(el, w, h, P) {   // map a w×h element onto the four corners P (TL, TR, BR, BL)
+  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = P;
+  const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3, dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, den = dx1 * dy2 - dx2 * dy1;
+  const g = (sx * dy2 - dx2 * sy) / den, h2 = (dx1 * sy - sx * dy1) / den;
+  const a = x1 - x0 + g * x1, b = x3 - x0 + h2 * x3, d = y1 - y0 + g * y1, e = y3 - y0 + h2 * y3;
+  el.style.transform = `matrix3d(${a / w},${d / w},0,${g / w},${b / h},${e / h},0,${h2 / h},0,0,1,0,${x0},${y0},0,1)`;
+}
+const UI = {
+  welcome: () => `<div class="ev">EventNook NEXT</div><h5>Welcome</h5><p>Scan the QR code on your ticket to check in.</p><div class="b">Scan your ticket</div><div class="b o">Find my registration</div>`,
+  ok: n => `<div class="ev">EventNook NEXT</div><div class="ok">✓</div><h5 style="margin:0 0 8px;font-size:30px">Hi, ${n.split(' ')[0]}!</h5><p>Printing your badge…</p>`,
+  photo: () => `<div class="ev">EventNook NEXT</div><div class="face"></div><h5 style="margin:0 0 6px;font-size:26px">Let's take your photo</h5><div class="b">Take my photo</div>`,
+  shot: o => `<div class="ev">EventNook NEXT</div><div class="face" style="border-style:solid;border-color:#22A06B">${G.headSVG(o, '#2A2E44')}</div><h5 style="margin:0 0 6px;font-size:26px">Looks great!</h5><div class="b">Check in</div>`,
+};
+function kiosk(x, y, s, tab) {
+  const k = $(`<div class="kiosk${tab ? ' tab' : ''}"><img class="cut" src="${IMG}${tab ? 'kiosk-tablet.png' : 'kiosk.png'}" alt=""><div class="ui"></div></div>`, scene);
+  k.style.transform = `translate(${x}px,${y}px) scale(${s})`; k._x = x; k._y = y; k._s = s;
+  k._ui = k.querySelector('.ui'); homography(k._ui, 300, 400, tab ? [[39, 108], [164, 29], [325, 287], [231, 419]] : KQ);
+  k.show = st => { k._ui.innerHTML = st; }; k.show(UI.welcome());
+  k.addEventListener('pointerup', () => k._tap && k._tap());
+  return k;
+}
+function ringOn(k, quad, label = 'TAP') {     // a pulsing orange circle over the screen; tapping it taps the kiosk
+  const cx = k._x + (quad[0][0] + quad[2][0]) / 2 * k._s, cy = k._y + (quad[1][1] + quad[3][1]) / 2 * k._s;
+  const w = (quad[2][0] - quad[0][0]) * k._s + 70, h = (quad[3][1] - quad[1][1]) * k._s + 60;
+  const r = $(`<div class="tapme"><div class="rg" style="width:${w}px;height:${h}px;left:${-w / 2}px;top:${-h / 2}px;transform:rotate(-28deg)"></div>
+    <div class="tg" style="left:${w * .12}px;top:${-h / 2 - 46}px">${label}</div></div>`);
+  place(r, cx, cy); r.addEventListener('pointerup', () => k._tap && k._tap());
+  const tg = r.querySelector('.tg'), run = RUN; let t = 0;
+  const iv = setInterval(() => { if (run !== RUN || !r.isConnected) return clearInterval(iv); t++; place(r, cx, cy, 0, t % 2 ? 1.09 : 1); tg.style.transform = `translateY(${t % 2 ? -8 : 0}px) rotate(${t % 2 ? -3 : 2}deg)`; }, 266);
+  return r;
+}
+async function kioskRound() {
+  const run = RUN; mode = 'kiosk'; over = false;
+  document.getElementById('desk').style.display = 'none'; document.getElementById('table').style.display = 'block'; crowd.style.zIndex = 16;
+  scene.innerHTML = '';
+  const K = [40, 450, 860].map(x => { const k = kiosk(x, 418, KS); k._g = null; k._busy = false; return k; });
+  Q.forEach(g => g.remove()); Q = []; made = 0;
+  for (let i = 0; i < 6; i++) { const g = newGuest(1420 + 94 * i + 40); G.at(g, 1420 + 94 * i, 1070); }
+  layout(); makeHud();
+  const s = await strip('Kiosks! Tap the orange circle to scan each guest.', 90, 40, { rot: -1 }); if (run !== RUN) return;
+  overP = new Promise(r => endRound = r);
+  hud.t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
+  arrivals = setInterval(() => { if (Q.length < 18) newGuest(); }, EVERY);
+  IDLE.arm();                                              // the instruction stays up for the whole round
+  // the front of the queue walks to any free kiosk
+  const feed = () => {
+    K.forEach(k => {
+      if (k._g || over || !Q.length) return;
+      const g = Q.shift(); k._g = g; layout(); g.style.zIndex = 120;
+      G.walk(g, k._x + 160, 1070, 700).then(() => { if (k._g !== g || over) return; k._ring = ringOn(k, KQ); k._qr = $('<div class="qrb"></div>'); place(k._qr, g._x - 96, g._y - 230, -14); sfx('pop', -16); k._ready = true; });
+    });
+  };
+  const loop = setInterval(() => { if (run !== RUN) return clearInterval(loop); feed(); }, 150);
+  K.forEach(k => k._tap = async () => {
+    if (!k._ready || k._busy || over) return;
+    const g = k._g; k._ready = false; k._busy = true; k._ring.remove(); k._qr.remove();
+    G.beep(); k.show(UI.ok(g._name));
+    await printTo(g, k._x + KSLOT[0] * KS, k._y + KSLOT[1] * KS, 76, 104);
+    hud.done++; setHud();
+    G.walk(g, g._x + 40, 1500, 700).then(() => g.remove());
+    k.show(UI.welcome()); k._g = null; k._busy = false;
+  });
+  await overP; clearInterval(loop); if (run !== RUN) return;
+  clearInterval(arrivals); watch.stop(); unstrip(s);
+  const waiting = Q.length + K.filter(k => k._g && !k._busy).length;
+  K.forEach(k => { if (k._ring) k._ring.remove(); if (k._qr) k._qr.remove(); });
+  stats.push({ done: hud.done, q: waiting, per: hud.done ? (ROUND / hud.done).toFixed(1) : '–' });
+  await wait(600); return run;
+}
+
+// ---------- the PVC kiosk: the guest snaps their own headshot ----------
+async function pvcBeat(run) {
+  scene.innerHTML = ''; crowd.innerHTML = '';
+  const k = kiosk(240, 236, 1.0, true);
+  const pr = $(`<img class="printer cut" src="${IMG}printer-pvc.png" alt="" style="width:380px">`, scene); place(pr, 680, 768 - 468);
+  const look = { skin: '#C68E6A', shirt: '#6F7255', hair: 'hijab', hairC: '#4F6B6A' }, name = 'Siti Rahman';
+  const g = G.person({ ...look, s: .84 }, crowd); G.at(g, 2080, 1070);
+  const s = await strip('Printing PVC? Guests snap their own headshot.', 90, 40, { rot: .6 }); if (run !== RUN) return;
+  await G.walk(g, 470, 1070, 760); if (run !== RUN) return;
+  k.show(UI.photo()); sfx('pop', -14);
+  const TQ = [[39, 108], [164, 29], [325, 287], [231, 419]];
+  const tapped = () => new Promise(res => { k._tap = () => { k._tap = null; res(); }; });
+  let r = ringOn(k, TQ, 'TAP TO TAKE THE PHOTO');
+  IDLE.arm(); await tapped(); IDLE.disarm(); if (run !== RUN) return;
+  r.remove();
+  const f = document.getElementById('flash'); sfx('click', -4); setTimeout(G.snip, 50); await tween(.4, e => f.style.opacity = 1 - e, 'out', false);
+  k.show(UI.shot(look)); sfx('pop', -12);
+  r = ringOn(k, TQ, 'TAP TO CHECK IN');
+  IDLE.arm(); await tapped(); IDLE.disarm(); if (run !== RUN) return;
+  r.remove(); G.beep(); k.show(UI.ok(name));
+  // the Primacy prints her card: her design, her new headshot
+  G.whirr(1.0, -14);
+  await tween(1.0, (e, q) => pr.style.transform = `translate(${680 + Math.sin(q * 60) * 2}px,${300 + Math.cos(q * 47) * 1.5}px)`, 'linear');
+  pr.style.transform = 'translate(680px,300px)';
+  const OUT = { x: 680 + 390 * 380 / 1029, y: 300 + 1010 * 380 / 1029 };
+  const c = $(`<div class="pvc">${G.cardHTML({ name, title: 'Reporter', co: 'The Daily Byte', look, photo: true }, 'MEDIA', true)}</div>`, scene);
+  for (let i = 0; i < 12; i++) {
+    const t = G.TH.MEDIA, q = $(`<div class="conf" style="background:${[t.a, t.b, t.c, t.d][i % 4]}"></div>`, scene), a = -Math.PI * (.15 + .7 * i / 11), rr = 140 + G.rnd() * 90;
+    tween(.5, e => { place(q, OUT.x + Math.cos(a) * rr * e, OUT.y + Math.sin(a) * rr * e + 160 * e * e, 200 * e, 1 - .4 * e); q.style.opacity = 1 - e * e; }, 'out').then(() => q.remove());
+  }
+  sfx('sparkle', -10); sfx('pop', -10);
+  await tween(.45, e => place(c, OUT.x - 30 + (1230 - OUT.x + 30) * e, OUT.y - 20 + (180 - OUT.y + 20) * e - Math.sin(e * Math.PI) * 100, 4 * e, .3 + 1.0 * e), 'inout');
+  await stamp('HEADSHOT ON THE SPOT', 860, 650, 'var(--mustard)', -6);
+  await wait(2200); if (run !== RUN) return;
+  await unstrip(s);
+}
+
+// ---------- the game ----------
+async function play() {
+  stats = [];
+  let run = await deskRound(); if (run !== RUN) return;
+  watch.el.remove();
+  const s = await strip(`Time! ${stats[0].done} checked in, ${stats[0].q} still waiting.`, 90, 40, { rot: .6 }); await wait(1800); if (run !== RUN) return;
+  await wipe(async () => { s.remove(); G.stage.querySelectorAll('.hud,.say,#list').forEach(e => e.remove()); });
+  run = await kioskRound(); if (run !== RUN) return;
+  watch.el.remove();
+  const s2 = await strip(`Time! ${stats[1].done} checked in. One scan each.`, 90, 40, { rot: -.6 }); await wait(1800); if (run !== RUN) return;
+  await wipe(async () => { s2.remove(); G.stage.querySelectorAll('.hud').forEach(e => e.remove()); });
+  await pvcBeat(run); if (run !== RUN) return;
+  finish();
+}
+async function finish() {
+  IDLE.disarm();
+  G.stage.querySelectorAll('.hud,.watch,.stamp').forEach(e => e.remove());
+  const [a, b] = stats;
+  await G.result({ kicker: 'RUSH HOUR · YOUR RESULT', heads: ['Staff desk', 'Self check-in kiosks'],
+    rows: [['Guests checked in', a.done, b.done], ['Still in the queue', a.q, b.q], ['Seconds per guest', a.per, b.per], ['Each guest needs', 'name search', '1 scan']],
+    stamp: 'PRINTED IN SECONDS', game: 'C', again: start, back: start,
+    lb: { title: 'most guests checked in', score: a.done + b.done, label: `${a.done + b.done} guests`, higher: true } });
+  IDLE.arm();
+}
+const IDLE = G.idle(20000, () => start());
+function start() {
+  RUN++; IDLE.disarm(); clearInterval(arrivals); if (watch) watch.stop(); mode = 'desk';
+  G.stage.querySelectorAll('.strip,.stamp,.btn,.card,.hud,.watch,.feed,#list,.say,.qrb,.tapme,.pvc,[data-dim]').forEach(e => e.remove());
+  crowd.innerHTML = ''; scene.innerHTML = ''; Q = []; made = 0; hud = {};
+  document.getElementById('desk').style.display = 'none'; document.getElementById('table').style.display = 'block'; crowd.style.zIndex = 16;
+  [40, 450, 860].forEach(x => kiosk(x, 418, KS));
+  for (let i = 0; i < 5; i++) { const g = G.person({ ...G.look(i + 3), s: S }, crowd); G.at(g, 1420 + 100 * i, 1070); g.style.zIndex = 100 - i; }
+  G.titleCard('MINI GAME C · SELF CHECK-IN KIOSK', 'Rush Hour', 'Check in the queue before it grows.<br>First at a staffed desk, then at the kiosks.', () => { crowd.innerHTML = ''; play(); });
+}
+start();
+</script>
+</body>
+</html>

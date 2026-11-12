@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Same Page</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="../common.css">
+<style>
+/* Mini game A · "Same Page": you check the seating plan with three people and get back three different paper copies, so
+   nobody knows where the VIP sits. Then EventNook Onsite: one live plan, everyone always has the right version, and the
+   guest finds their own seat on NookPass. Then a 30 s rush of changes. */
+#board{position:absolute;left:70px;top:150px;width:1110px;height:860px;box-sizing:border-box;z-index:5;
+  background:#F5EFE1;background-image:linear-gradient(rgba(60,50,35,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(60,50,35,.07) 1px,transparent 1px);background-size:40px 40px;
+  box-shadow:0 0 0 6px #fff,0 16px 26px rgba(40,28,10,.28);transform:rotate(-.6deg)}
+#board.digital{background:#FFFFFF;background-image:linear-gradient(rgba(59,64,216,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(59,64,216,.06) 1px,transparent 1px);
+  box-shadow:0 0 0 26px #22252C,0 0 0 30px #fff,0 26px 40px rgba(40,28,10,.35);transform:none;border-radius:4px}
+#bar{position:absolute;left:0;right:0;top:0;height:52px;background:var(--onsite);color:#fff;display:none;align-items:center;gap:14px;padding:0 20px;font:700 22px Inter}
+#bar i{font-style:normal;font-size:15px;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:7px}
+#bar b{margin-left:auto;font:600 17px Inter;display:flex;align-items:center;gap:8px}
+#bar b:before{content:'';width:10px;height:10px;border-radius:50%;background:#4ADE80}
+#board.digital #bar{display:flex}
+#sticky{position:absolute;right:26px;top:24px;background:#FFE58F;padding:16px 18px;font:26px/1.1 'Special Elite';transform:rotate(4deg);box-shadow:0 6px 10px rgba(40,28,10,.2)}
+#board.digital #sticky,#board.digital .scrib{display:none}
+#legend{position:absolute;left:24px;bottom:18px;display:none;gap:22px;font:600 18px Inter;color:#444}
+#legend span{display:flex;align-items:center;gap:7px}#legend i{width:13px;height:13px;border-radius:50%}
+#board.digital #legend{display:flex}
+#plan{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:6;pointer-events:none;overflow:visible}
+.tag{position:absolute;left:0;top:0;z-index:20;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:8px 14px 7px;font:800 24px Inter;white-space:nowrap;
+  box-shadow:0 6px 0 rgba(0,0,0,.18);cursor:grab;touch-action:none;display:flex;align-items:center;gap:10px}
+.tag em{font-style:normal;font:700 15px Inter;background:var(--ink);color:#fff;border-radius:6px;padding:3px 7px}
+.tag.live{box-shadow:0 0 0 6px var(--mustard),0 6px 0 rgba(0,0,0,.18)}
+.tag.drag{cursor:grabbing;z-index:25;box-shadow:0 16px 18px rgba(0,0,0,.25)}
+.guest{position:absolute;left:0;top:0;z-index:18;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:var(--mustard);border:4px solid #fff;
+  box-shadow:0 5px 6px rgba(40,28,10,.3);font:800 18px Inter;display:flex;align-items:center;justify-content:center}
+.ask{position:absolute;left:30px;top:-56px;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:2px 12px;font:900 30px 'Archivo Black'}
+.paper{position:absolute;left:0;top:0;background:#FBF8F1;box-shadow:0 0 0 5px #fff,0 12px 20px rgba(40,28,10,.25);z-index:8;font:24px/1.55 'Special Elite';padding:26px 30px;box-sizing:border-box}
+.paper h4{margin:0 0 10px;font:800 20px Inter;letter-spacing:.12em}
+.paper .ln{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(0,0,0,.2);position:relative}
+.xmark{position:absolute;right:-12px;top:-6px;color:var(--red);font:900 44px 'Archivo Black';transform:rotate(-8deg)}
+.circ{position:absolute;inset:-6px -14px;border:4px solid var(--red);border-radius:50%;transform:rotate(-3deg)}
+.dev{position:absolute;left:0;top:0;z-index:9;background:#22252C;box-shadow:0 0 0 4px #fff,0 16px 24px rgba(40,28,10,.32)}
+.dev .scr{position:absolute;background:#fff;overflow:hidden}
+#tablet{width:600px;height:420px;border-radius:30px}#tablet .scr{inset:22px;border-radius:10px}
+#phone{width:260px;height:480px;border-radius:40px}#phone .scr{inset:14px;border-radius:28px}
+.dhead{height:42px;display:flex;align-items:center;padding:0 14px;color:#fff;font:700 17px Inter;gap:8px}
+.ring{position:absolute;left:0;top:0;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:6px solid var(--mustard);z-index:12;pointer-events:none;opacity:0}
+.role{position:absolute;left:0;top:0;z-index:24;background:var(--charcoal);color:#fff;font:400 20px 'Archivo Black';letter-spacing:.06em;padding:8px 14px 6px;
+  box-shadow:0 0 0 4px #fff,0 6px 8px rgba(40,28,10,.25);white-space:nowrap}
+.note{position:absolute;left:0;top:0;z-index:26;background:var(--strip);font:400 26px 'Archivo Black';padding:10px 16px 8px;white-space:nowrap;
+  box-shadow:0 0 0 4px currentColor,0 8px 12px rgba(40,28,10,.25)}
+.copy{position:absolute;left:0;top:0;width:620px;height:268px;z-index:8;background:#FBF8F1;box-shadow:0 0 0 5px #fff,0 12px 20px rgba(40,28,10,.25);box-sizing:border-box;padding:16px 22px;cursor:pointer}
+.copy.pick{box-shadow:0 0 0 8px var(--mustard),0 12px 20px rgba(40,28,10,.25)}
+.who{display:flex;align-items:center;gap:12px;font:400 24px 'Archivo Black'}
+.who i{width:54px;height:54px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink);flex:none}
+.who small{margin-left:auto;font:19px 'Special Elite';color:#6b5d44}
+.cells{display:flex;gap:14px;margin-top:16px}
+.cell{flex:1;border:2px dashed rgba(0,0,0,.22);border-radius:8px;padding:8px 12px;font:20px 'Special Elite';position:relative}
+.cell b{display:block;font:400 58px/1.05 'Archivo Black'}
+.cell.tan{background:rgba(233,169,35,.28);border:3px solid var(--mustard)}
+.cell .scr8{position:absolute;right:8px;bottom:8px;color:var(--red);font:22px 'Special Elite';transform:rotate(-8deg)}
+.d3{position:absolute;left:0;top:0;width:620px;height:268px;z-index:9;background:#22252C;border-radius:22px;box-shadow:0 0 0 4px #fff,0 16px 24px rgba(40,28,10,.32)}
+.d3 .s{position:absolute;inset:12px;background:#fff;border-radius:10px;overflow:hidden}
+.d3 .dh{height:46px;background:var(--onsite);color:#fff;display:flex;align-items:center;gap:10px;padding:0 12px;font:700 18px Inter}
+.d3 .dh i{width:32px;height:32px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px #fff;flex:none}
+.d3 .dh b{margin-left:auto;font:600 15px Inter;display:flex;align-items:center;gap:6px}.d3 .dh b:before{content:'';width:9px;height:9px;border-radius:50%;background:#4ADE80}
+.d3 .bd{display:flex;align-items:center;gap:14px;padding:6px 10px}
+.d3 .inf{font:700 18px Inter;color:#555}.d3 .inf b{display:block;font:400 64px/1 'Archivo Black';color:var(--ink)}
+.tray{position:absolute;left:0;top:0;z-index:7;width:300px;height:100px;box-sizing:border-box;border:3px dashed var(--onsite);border-radius:12px;background:rgba(59,64,216,.06);padding:8px 14px;font:700 18px Inter;color:var(--onsite)}
+.pup{z-index:22}.pup.gp{cursor:grab;touch-action:none}
+.pup.gp.lift{cursor:grabbing;z-index:27;filter:drop-shadow(0 18px 10px rgba(40,28,10,.3))}
+.bub{position:absolute;left:0;top:0;z-index:28;background:#fff;border:4px solid var(--ink);border-radius:18px;padding:10px 16px 9px;font:24px/1.2 'Special Elite';white-space:nowrap;
+  box-shadow:0 6px 0 rgba(0,0,0,.15);pointer-events:none}
+.bub b{display:block;font:800 17px Inter;letter-spacing:.06em;color:#6b5d44;margin-bottom:2px}
+.bub:after{content:'';position:absolute;left:26px;bottom:-22px;border:11px solid transparent;border-top-color:var(--ink)}
+.bub.ask{left:0;top:0;padding:10px 16px 9px;font:24px/1.2 'Special Elite'}
+.bub.ask{border-color:var(--red)}.bub.ask:after{border-top-color:var(--red)}
+.bub.flip:after{left:auto;right:26px}
+.hand{position:absolute;left:0;top:0;z-index:29;font:60px/1 serif;pointer-events:none;opacity:0}
+.say{position:absolute;left:0;top:0;z-index:26;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:8px 14px 6px;font:24px 'Special Elite';white-space:nowrap;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+.tapme{position:absolute;left:0;top:0;z-index:28;pointer-events:none}
+.tapme .rg{position:absolute;border:10px dashed var(--mustard);border-radius:50%;background:rgba(233,169,35,.18);box-shadow:0 0 0 4px rgba(255,255,255,.55)}
+.tapme .tg{position:absolute;background:var(--mustard);color:var(--ink);font:400 26px 'Archivo Black';padding:9px 16px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 0 0 4px #fff,0 6px 10px rgba(40,28,10,.25)}
+#watch{position:absolute;left:0;top:0;z-index:31;width:150px;height:150px;border-radius:50%;background:var(--mustard);box-shadow:0 0 0 6px #fff,0 10px 16px rgba(40,28,10,.3);
+  display:flex;align-items:center;justify-content:center;font:900 54px 'Archivo Black';opacity:0}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg"></div>
+  <div class="news" style="left:1240px;top:640px;width:560px;height:330px;transform:rotate(4deg)"></div>
+  <div class="news" style="left:30px;top:40px;width:420px;height:200px;transform:rotate(-4deg)"></div>
+  <div id="board"><div id="bar">eventnook <i>Onsite</i> Seating · Live Tables<b>Live</b></div><div id="sticky">seating_v3_FINAL<br>_final(2).pdf</div>
+    <div id="legend"><span><i style="background:var(--green)"></i>Everyone here</span><span><i style="background:var(--orange)"></i>Arriving</span><span><i style="background:var(--grey)"></i>Nobody yet</span></div></div>
+  <svg id="plan" viewBox="0 0 1920 1080"></svg>
+  <div class="grain"></div><div class="vig"></div>
+</div>
+<script src="../common.js"></script>
+<script>
+const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
+const NS = 'http://www.w3.org/2000/svg';
+const BX = 70, BY = 150, BW = 1110, BH = 860;                     // the board
+const T = {};                                                     // table centres on the stage
+[[1, 250, 400], [2, 490, 400], [3, 730, 400], [4, 970, 400], [5, 250, 740], [6, 490, 740], [7, 730, 740], [8, 970, 740]].forEach(([n, x, y]) => T[n] = { x, y });
+const ENT = { x: 625, y: 985 };
+const plan = document.getElementById('plan'), board = document.getElementById('board');
+let digital = false, seated = {}, live = {};                       // seated[n] = guests now at table n
+
+// ---------- drawing the plan (big, and as minis inside the devices) ----------
+function svg(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+function seatColor(n, k) {                     // live colours: some tables already arriving, the rest waiting
+  const got = (live[n] || 0) + (seated[n] || 0);
+  return k < got ? (got >= 10 ? 'var(--green)' : 'var(--orange)') : 'var(--grey)';
+}
+function drawPlan() {
+  plan.innerHTML = '';
+  svg('rect', { x: BX + 40, y: BY + (digital ? 74 : 30), width: BW - 80, height: 46, rx: 8, fill: digital ? '#E8E9FB' : 'rgba(60,50,35,.12)' }, plan);
+  svg('text', { x: BX + BW / 2, y: BY + (digital ? 106 : 62), 'text-anchor': 'middle', 'font-family': digital ? 'Inter' : 'Special Elite', 'font-weight': 700, 'font-size': 22, fill: '#555' }, plan).textContent = 'STAGE';
+  for (const n in T) {
+    const { x, y } = T[n];
+    for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5; svg('circle', { cx: x + Math.cos(a) * 96, cy: y + Math.sin(a) * 96, r: 10, fill: digital ? seatColor(n, k) : '#fff', stroke: digital ? 'none' : '#1D1B18', 'stroke-width': 2.5 }, plan); }
+    svg('circle', { cx: x, cy: y, r: 70, fill: digital ? '#fff' : '#FBF8F1', stroke: digital ? 'var(--onsite)' : '#1D1B18', 'stroke-width': digital ? 4 : 3.5, id: 't' + n }, plan);
+    svg('text', { x, y: y + 15, 'text-anchor': 'middle', 'font-family': 'Archivo Black', 'font-size': 42, fill: digital ? 'var(--onsite)' : '#1D1B18' }, plan).textContent = n;
+  }
+  svg('text', { x: ENT.x, y: ENT.y + 4, 'text-anchor': 'middle', 'font-family': digital ? 'Inter' : 'Special Elite', 'font-weight': 700, 'font-size': 20, fill: '#777' }, plan).textContent = '▲ ENTRANCE';
+  if (!digital) {                                                   // the paper plan has been scribbled on
+    const g = svg('g', { class: 'scrib', fill: 'none', stroke: '#C8321E', 'stroke-width': 4, 'stroke-linecap': 'round' }, plan);
+    svg('path', { d: 'M640 560 q60 -40 120 -10 M770 540 l-14 -6 m14 6 l-8 12' }, g);
+    svg('text', { x: 655, y: 600, fill: '#C8321E', stroke: 'none', 'font-family': 'Special Elite', 'font-size': 26 }, g).textContent = 'T7 → T12?';
+    svg('text', { x: 300, y: 590, fill: '#C8321E', stroke: 'none', 'font-family': 'Special Elite', 'font-size': 26, transform: 'rotate(-6 300 590)' }, g).textContent = 'move VIP!!';
+    svg('path', { d: 'M180 300 l140 30 M1030 300 q40 60 -20 120' }, g);
+  }
+}
+function miniPlan(el, w, h, focus) {          // a mini Live Tables plan inside a device
+  const s = Math.min(w / BW, h / (BH - 60)), m = svg('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}` }, el);
+  const X = x => (x - BX) * s, Y = y => (y - BY - 40) * s;
+  for (const n in T) {
+    const { x, y } = T[n];
+    for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5; svg('circle', { cx: X(x + Math.cos(a) * 96), cy: Y(y + Math.sin(a) * 96), r: Math.max(2, 10 * s), fill: seatColor(n, k) }, m); }
+    svg('circle', { cx: X(x), cy: Y(y), r: 70 * s, fill: '#fff', stroke: n == focus ? 'var(--mustard)' : 'var(--onsite)', 'stroke-width': n == focus ? 5 : 2.5 }, m);
+    svg('text', { x: X(x), y: Y(y) + 26 * s, 'text-anchor': 'middle', 'font-family': 'Archivo Black', 'font-size': Math.max(10, 50 * s), fill: 'var(--onsite)' }, m).textContent = n;
+  }
+  return { m, X, Y, s };
+}
+
+// ---------- people ----------
+function tag(name, role, table, ox = 52, oy = 64) {
+  const el = $(`<div class="tag">${name}<em>${role}</em></div>`); el._table = table; el._home = { x: T[table].x + ox, y: T[table].y + oy };
+  place(el, el._home.x, el._home.y); return el;
+}
+function guestToken(init) { const el = $(`<div class="guest">${init}</div>`); place(el, ENT.x, ENT.y + 60); return el; }
+async function walk(el, to, speed = 520) {               // along the aisles: up the middle, across, then to the table
+  const pts = [{ x: el._x, y: el._y }, { x: ENT.x, y: to.y + 130 }, { x: to.x, y: to.y + 130 }, { x: to.x - 44, y: to.y + 98 }];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], d = Math.hypot(b.x - a.x, b.y - a.y);
+    if (d < 2) continue;
+    await tween(d / speed, e => place(el, a.x + (b.x - a.x) * e, a.y + (b.y - a.y) * e + Math.abs(Math.sin(e * d / 30)) * -4), 'linear');
+    sfx('click-soft', -26);
+  }
+}
+function drag(el, target, onDrop) {          // drag the tag; only the target table takes it
+  el.classList.add('live'); IDLE.arm();
+  const ring = svg('circle', { cx: T[target].x, cy: T[target].y, r: 92, fill: 'none', stroke: 'var(--mustard)', 'stroke-width': 8, 'stroke-dasharray': '16 12' }, plan);
+  let off = null;
+  const down = e => { e.preventDefault(); G.audio(); el.setPointerCapture(e.pointerId); const p = G.pt(e); off = { x: p.x - el._x, y: p.y - el._y }; el.classList.add('drag'); sfx('click-soft', -12); };
+  const move = e => { if (!off) return; const p = G.pt(e); place(el, p.x - off.x, p.y - off.y, -3); };
+  const up = async e => {
+    if (!off) return; off = null; el.classList.remove('drag');
+    const c = { x: el._x + el.offsetWidth / 2, y: el._y + el.offsetHeight / 2 };
+    if (Math.hypot(c.x - T[target].x, c.y - T[target].y) < 140) {
+      el.removeEventListener('pointerdown', down); el.classList.remove('live'); ring.remove(); IDLE.disarm();
+      sfx('pop', -8); await G.slideTo(el, T[target].x + 52, T[target].y + 64, .18, 'back'); onDrop();
+    } else { G.boing(); await G.slideTo(el, el._home.x, el._home.y, .3, 'back'); }
+  };
+  el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+}
+async function pulse(x, y) { const r = $('<div class="ring"></div>'); G.ping(); await tween(.5, e => { place(r, x, y, 0, .3 + 1.6 * e); r.style.opacity = 1 - e; }, 'out', false); r.remove(); }
+
+// ---------- the rounds ----------
+// the three people you check the plan with, and the copy each one sends back
+const PEOPLE = [
+  { role: 'CLIENT', file: 'v3_client_edits.pdf', look: { skin: '#F2C7A5', shirt: '#7A6250', hair: 'bob', hairC: '#2B2230' }, t: { tan: 4, priya: 1, ahmad: 2 } },
+  { role: 'MANAGER', file: 'v3_FINAL.pdf', look: { skin: '#8D5A3B', shirt: '#3A3836', hair: 'short', hairC: '#1E1A1A', glasses: true }, t: { tan: 7, priya: 1, ahmad: 4 } },
+  { role: 'VENUE', file: 'v2_venue_print.pdf', look: { skin: '#E9B892', shirt: '#4A5568', hair: 'curly', hairC: '#3A2A22' }, t: { tan: 2, priya: 6, ahmad: 2 } },
+];
+const CY = [150, 445, 740], CX = 1240;                           // the right-hand column: three copies, later three screens
+let state = {}, timer = null, d3s = [];
+const face = (o, size = 54) => G.headSVG(o, '#E9EEF5');
+function stagePos(el) { const r = el.getBoundingClientRect(); return { x: (r.left + r.width / 2 - G.ox) / G.s, y: (r.top + r.height / 2 - G.oy) / G.s, w: r.width / G.s, h: r.height / G.s }; }
+async function note(text, x, y, color, r = -3) {
+  const e = $(`<div class="note" style="color:${color}">${text}</div>`); G.sfx('stamp', -14);
+  await tween(.14, k => place(e, x, y, r, 1.6 - .6 * k)); return e;
+}
+function say(text, x, y) { const e = $(`<div class="say">${text}</div>`); place(e, x, y, -2); sfx('pop', -16); return e; }
+function tapRing(target, label = 'TAP') {           // a pulsing orange circle with a tag, like the kiosk game
+  const p = stagePos(target), w = p.w + 60, h = p.h + 40;
+  const r = $(`<div class="tapme"><div class="rg" style="width:${w}px;height:${h}px;left:${-w / 2}px;top:${-h / 2}px"></div><div class="tg" style="left:${-w / 2 - 10}px;top:${-h / 2 - 52}px">${label}</div></div>`);
+  place(r, p.x, p.y); let t = 0; const iv = setInterval(() => { if (!r.isConnected) return clearInterval(iv); t++; place(r, p.x, p.y, 0, t % 2 ? 1.07 : 1); }, 266);
+  return r;
+}
+async function start() {
+  IDLE.disarm(); clearInterval(timer); done = false;
+  G.stage.querySelectorAll('.tag,.guest,.paper,.copy,.d3,.dev,.say,.tapme,.tray,.pup,.bub,.hand,.strip,.stamp,.btn,.card,#watch,.note,[data-dim]').forEach(e => e.remove());
+  digital = false; seated = {}; live = {}; board.classList.remove('digital'); board.style.transform = plan.style.transform = ''; drawPlan();
+  state = { made: 0, rush: null };
+  const t = $(`<div class="card" style="left:560px;top:300px;width:800px;padding:46px 56px;text-align:center">
+    <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">MINI GAME A · TABLE ALLOCATION</div>
+    <div style="font:72px/1.05 'Archivo Black';margin:14px 0 10px">Same Page</div>
+    <div style="font:30px/1.35 'Special Elite'">Three people, three copies of the seating plan.<br>Where does the VIP sit?</div></div>`);
+  button('Tap to play ▸', 790, 690, async () => { await G.audio(); G.music('loop.wav'); t.remove(); document.querySelectorAll('.btn').forEach(b => b.remove()); paperRound(); }, true);
+}
+
+// ---------- the guests: paper people you drag onto a table, each saying what they need ----------
+const LOOKS = {
+  tan: { skin: '#F2C7A5', shirt: '#2B2F45', hair: 'short', hairC: '#1E1A1A', glasses: true },
+  priya: { skin: '#8D5A3B', shirt: '#7A6250', hair: 'long', hairC: '#1E1A1A' },
+  ahmad: { skin: '#C68E6A', shirt: '#55606B', hair: 'curly', hairC: '#2B2230' },
+  sarah: { skin: '#F5D3B3', shirt: '#6F7255', hair: 'bob', hairC: '#5A3A2A' },
+};
+const GS = .5;                                                     // guests on the plan: 100 × 210 px
+function at(p, x, y, r = 0, k = 1) {
+  G.at(p, x, y, r, GS * k);
+  if (!p._bub) return;                                               // the bubble sits over the head, flipped left near the screens
+  const w = p._bub.offsetWidth, flip = x + 10 + w > 1170;
+  p._bub.classList.toggle('flip', flip); place(p._bub, flip ? x - w + 30 : x + 10, y - 420 * GS * k - p._bub.offsetHeight - 18, -2);
+}
+function guest(look, name, x, y) { const p = G.person({ ...look, s: GS }, G.stage); p.classList.add('gp'); p._name = name; at(p, x, y); return p; }
+function bubble(p, who, text, ask) {
+  if (p._bub) p._bub.remove();
+  p._bub = $(`<div class="bub${ask ? ' ask' : ''}">${who ? `<b>${who}</b>` : ''}${text}</div>`); at(p, p._x, p._y); sfx('pop', -14); return p._bub;
+}
+function unbubble(p) { if (p._bub) { p._bub.remove(); p._bub = null; } }
+const seatOf = n => ({ x: T[n].x + 96, y: T[n].y + 96 });              // where a guest stands at a table
+async function walkTo(p, n, speed = 520) {                           // along the aisles, like the real room
+  const to = seatOf(n), pts = [{ x: p._x, y: p._y }, { x: ENT.x, y: p._y }, { x: ENT.x, y: T[n].y + 150 }, { x: to.x, y: T[n].y + 150 }, to];
+  for (let i = 1; i < pts.length; i++) {
+    const A = pts[i - 1], B = pts[i], d = Math.hypot(B.x - A.x, B.y - A.y); if (d < 2) continue;
+    await tween(d / speed, (e, q) => at(p, A.x + (B.x - A.x) * e, A.y + (B.y - A.y) * e - Math.abs(Math.sin(q * d / 30 * Math.PI)) * 6, Math.sin(q * d / 30 * Math.PI) * 3), 'linear');
+    sfx('click-soft', -26);
+  }
+}
+// drag a guest onto one of the tables in `ok`; dashed orange rings show where they can go
+function dragGuest(p, ok, onDrop) {
+  IDLE.arm();
+  const rings = ok.map(n => svg('circle', { cx: T[n].x, cy: T[n].y, r: 96, fill: 'rgba(233,169,35,.12)', stroke: 'var(--mustard)', 'stroke-width': 9, 'stroke-dasharray': '18 12' }, plan));
+  const home = { x: p._x, y: p._y }; let off = null, t = 0;
+  const pulse = setInterval(() => { if (!rings[0].isConnected) return clearInterval(pulse); t++; rings.forEach(r => r.setAttribute('r', t % 2 ? 104 : 96)); }, 266);
+  const down = e => { e.preventDefault(); G.audio(); p.setPointerCapture(e.pointerId); const q = G.pt(e); off = { x: q.x - p._x, y: q.y - p._y }; p.classList.add('lift'); sfx('click-soft', -12); at(p, p._x, p._y, -6, 1.12); };
+  const move = e => { if (!off) return; const q = G.pt(e); at(p, q.x - off.x, q.y - off.y, -6, 1.12); };
+  const up = async () => {
+    if (!off) return; off = null; p.classList.remove('lift');
+    const c = { x: p._x, y: p._y - 105 }, n = ok.find(k => Math.hypot(c.x - T[k].x, c.y - T[k].y) < 160);
+    if (n) {                                                          // the plan changes the moment you let go; the guest settles in
+      p.removeEventListener('pointerdown', down); rings.forEach(r => r.remove()); IDLE.disarm();
+      sfx('pop', -8); const to = seatOf(n), x0 = p._x, y0 = p._y;
+      onDrop(n); await tween(.18, e => at(p, x0 + (to.x - x0) * e, y0 + (to.y - y0) * e), 'back');
+    } else { G.boing(); const x0 = p._x, y0 = p._y; await tween(.3, e => at(p, x0 + (home.x - x0) * e, y0 + (home.y - y0) * e), 'back'); }
+  };
+  p.addEventListener('pointerdown', down); p.addEventListener('pointermove', move); p.addEventListener('pointerup', up); p.addEventListener('pointercancel', up);
+  // a hand shows the move once
+  const hand = $('<div class="hand">👆</div>'); const to = seatOf(ok[0]);
+  tween(1.2, e => { hand.style.opacity = e < .1 ? e * 10 : e > .85 ? (1 - e) / .15 : 1; place(hand, p._x - 20 + (to.x - p._x) * G.EASE.inout(e), p._y - 60 + (to.y - p._y) * G.EASE.inout(e)); }, 'linear').then(() => hand.remove());
+}
+
+// ---------- round 1: three paper copies, three answers ----------
+function copyCard(P, i) {
+  const c = $(`<div class="copy"><div class="who"><i>${face(P.look)}</i>${P.role}'S COPY<small>${P.file}</small></div>
+    <div class="cells"><div class="cell tan">Tan W. (VIP)<b>${P.t.tan}</b><span class="scr8">moved!</span></div><div class="cell">Priya N.<b>${P.t.priya}</b></div><div class="cell">Ahmad T.<b>${P.t.ahmad}</b></div></div></div>`);
+  place(c, 2000, CY[i], [1.5, -1, 2][i]); c._i = i; return c;
+}
+async function paperRound() {
+  const s0 = await strip('You check the seating plan with 3 people…', 90, 40, { rot: -1 });
+  const C = PEOPLE.map(copyCard);
+  for (const [i, c] of C.entries()) { sfx('paper', -10); await G.slideTo(c, CX, CY[i], .3, 'out', [1.5, -1, 2][i]); await wait(250); }
+  await unstrip(s0);
+  const s1 = await strip('…and each one sends back a different copy.', 90, 40, { rot: .8 });
+  for (const c of C) { const b = c.querySelector('.cell.tan b'); await tween(.3, e => b.style.transform = `scale(${1 + .35 * Math.sin(e * Math.PI)})`); sfx('pop', -14); }
+  await wait(1200); await unstrip(s1);
+  // the VIP arrives and asks; the copies say 4, 7 or 2
+  const tan = guest(LOOKS.tan, 'Tan W.', ENT.x + 120, ENT.y + 50);
+  bubble(tan, 'TAN W. · VIP', "Where's my seat?"); G.boing();
+  const s2p = strip('Drag Tan W. to the table you think is right.', 90, 40, { rot: -.6 });   // he can be dragged right away
+  const n = await new Promise(res => dragGuest(tan, [...new Set(PEOPLE.map(P => P.t.tan))], res));
+  await unstrip(await s2p);
+  // whoever's copy says otherwise objects, and he's lost
+  const mine = PEOPLE.findIndex(P => P.t.tan === n);
+  C[mine].classList.add('pick');
+  for (const [i, P] of PEOPLE.entries()) if (P.t.tan !== n) { await note(`NO, TABLE ${P.t.tan}!`, CX + 330, CY[i] + 180, 'var(--red)', [-3, 3, -2][i]); G.boing(); await wait(300); }
+  bubble(tan, 'TAN W. · VIP', 'Wait… which one?!', true); G.mood(tan, 'frown');
+  await stamp('3 COPIES · 3 ANSWERS', 250, 470, 'var(--red)', -7);
+  const s3 = await strip('On paper, nobody knows which copy is right.', 90, 40, { rot: .6 }); await wait(2400);
+  await unstrip(s3);
+  await toLive(tan, C);
+  liveRound(tan);
+}
+
+// ---------- paper → EventNook, in view: the plan flips over, each copy turns into that person's screen ----------
+function flipX(el, x, y, r, s) { el.style.transform = `translate(${x}px,${y}px) rotate(${r}deg) scale(${s},1)`; el._x = x; el._y = y; }
+async function flipBoard() {
+  plan.style.transformOrigin = `${BX + BW / 2}px ${BY + BH / 2}px`; sfx('flip', -10);
+  await tween(.2, e => { board.style.transform = `rotate(-.6deg) scaleX(${1 - e})`; plan.style.transform = `scaleX(${1 - e})`; }, 'in');
+  digital = true; board.classList.add('digital');
+  live = { 1: 6, 2: 10, 3: 4, 5: 10, 6: 3, 7: 2, 8: 7 };            // guests already arriving, like the real Live Tables
+  drawPlan();
+  await tween(.24, e => { board.style.transform = `scaleX(${e})`; plan.style.transform = `scaleX(${e})`; });
+  board.style.transform = plan.style.transform = '';
+}
+async function flipSwap(a, b, x, y, r) {
+  sfx('flip', -14);
+  await tween(.14, e => flipX(a, x, y, r, 1 - e), 'in'); a.remove();
+  flipX(b, x, y, r, 0); await tween(.16, e => flipX(b, x, y, r, e)); place(b, x, y, r);
+}
+async function toLive(tan, C) {
+  const s4P = strip('Now with EventNook, all 3 share one live plan.', 90, 40, { rot: -.8 });
+  const junk = [...G.stage.querySelectorAll('.stamp,.note')];
+  unbubble(tan); G.mood(tan, null); sfx('paper', -12);
+  await tween(.2, e => junk.forEach(j => j.style.opacity = 1 - e), 'in'); junk.forEach(j => j.remove());
+  // Tan W. steps back off the wrong table while the plan turns over
+  const x0 = tan._x, y0 = tan._y, TX = 1000, TY = 1000;
+  const back = tween(.6, e => at(tan, x0 + (TX - x0) * e, y0 + (TY - y0) * e - Math.sin(e * Math.PI) * 40), 'inout');
+  await flipBoard();
+  const tray = $(`<div class="tray">Unseated · 1</div>`); place(tray, 850, 880, 0, 0); sfx('pop', -14);
+  tween(.18, e => place(tray, 850, 880, 0, e), 'back');
+  screens(); refresh3(4);                                            // the copies said 4, 7 and 2; the live plan says 4 on every screen
+  for (const [i, c] of C.entries()) { await flipSwap(c, d3s[i], CX, CY[i], [1.5, -1, 2][i]); pulse(d3c(i).x, d3c(i).y); }
+  await back; const s4 = await s4P; await wait(1400); await unstrip(s4);
+}
+
+// ---------- round 2: one live plan, and NookPass shows the way ----------
+function screens() {
+  d3s = PEOPLE.map((P, i) => {
+    const d = $(`<div class="d3"><div class="s"><div class="dh"><i>${face(P.look)}</i>${P.role} · EventNook Onsite<b>Live</b></div>
+      <div class="bd"><div class="mini"></div><div class="inf"><span class="who2">Tan W.</span><b>–</b><span class="lbl3">Not seated yet</span></div></div></div></div>`);
+    place(d, 2000, CY[i], [1.5, -1, 2][i]); return d;
+  });
+}
+function refresh3(focus, who = 'Tan W.', seated = false) {   // all 3 always show the guest on screen now and their table
+  d3s.forEach(d => {
+    const m = d.querySelector('.mini'); m.innerHTML = ''; miniPlan(m, 330, 190, focus); d.querySelector('.who2').textContent = who;
+    d.querySelector('.inf b').textContent = focus || '–';
+    const l = d.querySelector('.inf .lbl3'); l.textContent = !focus ? 'Not seated yet' : seated ? 'Table · seated ✓' : 'Table · not seated yet';
+    l.style.color = seated ? 'var(--green)' : '';
+  });
+}
+const d3c = i => ({ x: CX + 310, y: CY[i] + 134 });
+async function slide3(inOut) { for (const [i, d] of d3s.entries()) { G.slideTo(d, inOut ? CX : 2000, CY[i], .3, inOut ? 'out' : 'in', [1.5, -1, 2][i]); sfx('whoosh-short', -18); await wait(110); } await wait(300); }
+async function liveRound(tan) {                                    // the board, tray and screens are already live (toLive)
+  const tray = G.stage.querySelector('.tray');
+  bubble(tan, 'TAN W. · VIP', 'The client wants me at Table 4!');
+  const sP = strip('Drag Tan W. to Table 4.', 90, 40, { rot: -.8 });
+  dragGuest(tan, [4], async () => {
+    // every screen changes at once, the moment he's dropped
+    state.made++; seated[4] = (seated[4] || 0) + 1; drawPlan();
+    PEOPLE.forEach((_, i) => pulse(d3c(i).x, d3c(i).y)); refresh3(4, 'Tan W.', true); sfx('flip', -12);
+    tray.remove(); bubble(tan, 'TAN W. · VIP', 'Thanks!');
+    const [notes] = await Promise.all([Promise.all(PEOPLE.map((_, i) => note('UPDATED ✓', CX + 420, CY[i] - 14, 'var(--green)', [3, -2, 2][i]))), sP.then(unstrip)]);
+    const s1 = await strip('Everyone always has the right version.', 90, 40, { rot: .6 }); await wait(1800); await unstrip(s1);
+    notes.forEach(n => n.remove()); unbubble(tan); tan.remove();
+    await guestFindsSeat();
+  });
+}
+async function guestFindsSeat() {
+  await slide3(false);
+  const ph = $(`<div class="dev" id="phone"><div class="scr"><div class="dhead" style="background:var(--nook)">NookPass · My seat</div>
+    <div style="padding:12px 16px 4px;font:600 15px Inter;color:#666">Your table</div><div id="pnum" style="padding:0 16px;font:900 74px/1 'Archivo Black';color:var(--ink)">4</div>
+    <div id="pbtn" style="margin:12px 16px;background:var(--nook);color:#fff;border-radius:12px;padding:11px;text-align:center;font:700 17px Inter">Show me the way</div>
+    <div class="mini" style="margin:0 10px"></div></div></div>`);
+  place(ph, 2000, 400, -2); const pm = ph.querySelector('.mini'); const b = miniPlan(pm, 212, 190, 4);
+  await G.slideTo(ph, 1420, 400, .32, 'out', -2);
+  // on the day: Tan W. walks in and checks his phone
+  const g = guest(LOOKS.tan, 'Tan W.', ENT.x + 120, ENT.y + 50); g.classList.remove('gp');
+  bubble(g, 'TAN W. · ON THE DAY', "Where's my seat?");
+  const s = await strip('On the day, he checks NookPass. Tap Show me the way.', 90, 40, { rot: -.6 });
+  const pb = ph.querySelector('#pbtn'), r = tapRing(pb, 'TAP');
+  IDLE.arm(); await new Promise(res => ph.addEventListener('pointerup', res, { once: true })); IDLE.disarm();
+  r.remove(); pb.style.background = 'var(--mustard)'; pb.style.color = 'var(--ink)'; sfx('click', -10);
+  bubble(g, 'TAN W.', 'Table 4. On my way!');
+  const P = [ENT, { x: ENT.x, y: T[4].y + 130 }, { x: T[4].x, y: T[4].y + 130 }, { x: T[4].x, y: T[4].y + 84 }];
+  const line = svg('path', { d: P.map((p, i) => `${i ? 'L' : 'M'}${b.X(p.x).toFixed(1)} ${b.Y(p.y).toFixed(1)}`).join(' '), fill: 'none', stroke: 'var(--mustard)', 'stroke-width': 4, 'stroke-dasharray': '6 6', 'stroke-linecap': 'round' }, b.m);
+  const L = line.getTotalLength(); line.style.strokeDasharray = L; line.style.strokeDashoffset = L;
+  await Promise.all([walkTo(g, 4), tween(1.4, e => { line.style.strokeDashoffset = L * (1 - e); }, 'linear')]);
+  line.style.strokeDasharray = '6 6'; line.style.strokeDashoffset = 0;
+  bubble(g, 'TAN W.', 'Found it!'); G.mood(g, 'wow'); sfx('sparkle', -12);
+  await unstrip(s);
+  await stamp('EVERYONE ON THE SAME PAGE', 190, 470, 'var(--mustard)', -5); await wait(2200);
+  document.querySelectorAll('.stamp').forEach(e => e.remove()); unbubble(g); G.mood(g, null);
+  await G.slideTo(ph, 2000, 400, .3, 'in', -2); ph.remove();
+  await slide3(true);
+  rush();
+}
+async function rush() {
+  const JOBS = [
+    { name: 'Priya N.', who: 'PRIYA N. · SPEAKER', look: LOOKS.priya, to: 1, say: "I'm speaking now! Table 1, please." },
+    { name: 'Ahmad T.', who: 'AHMAD T.', look: LOOKS.ahmad, to: 4, say: 'I brought a +1. Table 4!' },
+    { name: 'Sarah L.', who: 'SARAH L. · PRESS', look: LOOKS.sarah, to: 8, say: 'Press! Seat me at Table 8.' },
+  ];
+  const watch = $('<div id="watch">30</div>'); place(watch, 1215, 14); watch.style.opacity = 1; sfx('stamp', -14);
+  let left = 30, over = false;
+  timer = setInterval(() => { left--; watch.textContent = Math.max(0, left); sfx('tick', -20); if (left <= 0) { over = true; clearInterval(timer); finish(); } }, 1000);
+  const s0P = strip('Rush! Drag each guest to the table they ask for.', 90, 40, { rot: -1, cps: 60 });
+  const r0 = performance.now(), HOLD = 900; let held = 0; state.rush = null;
+  for (const [k, j] of JOBS.entries()) {
+    if (over) return;
+    if (k) { await wait(HOLD); held += HOLD; if (over) return; }  // let the synced screens be seen before the next guest (not timed)
+    const g = guest(j.look, j.name, ENT.x + 120, ENT.y + 50); bubble(g, j.who, j.say);
+    refresh3(j.to, j.name); sfx('flip', -18);                       // all 3 screens follow the guest who's here now
+    await new Promise(res => dragGuest(g, [j.to], () => {
+      state.made++; seated[j.to] = (seated[j.to] || 0) + 1; drawPlan(); refresh3(j.to, j.name, true);
+      PEOPLE.forEach((_, i) => pulse(d3c(i).x, d3c(i).y));
+      bubble(g, j.who.split(' · ')[0], 'Thanks!'); G.mood(g, 'wow'); setTimeout(() => { unbubble(g); G.mood(g, null); }, 900);
+      res();
+    }));
+  }
+  await unstrip(await s0P);
+  if (!over) { state.rush = (performance.now() - r0 - held) / 1000; clearInterval(timer); await wait(1200); finish(); }
+}
+let done = false;
+const IDLE = G.idle(20000, () => start());
+async function finish() {
+  if (done) return; done = true; clearInterval(timer); IDLE.disarm();
+  await wait(400);
+  G.stage.querySelectorAll('.strip,.tag.live,#watch,.tapme,.bub,.hand').forEach(e => e.remove());
+  const rushed = state.rush != null;
+  await G.result({ kicker: 'SAME PAGE · YOUR RESULT', heads: ['On paper', 'EventNook + NookPass'],
+    rows: [['Copies of the seating plan', '3 different', '1 live plan'], ['Guests who found their seat', 'lost', 'on their own'], ['Time for 3 rush changes', 'reprint all', rushed ? state.rush.toFixed(1) + ' s' : 'out of time']],
+    stamp: 'SAME PAGE', game: 'A', again: () => { done = false; start(); }, back: () => { done = false; start(); },
+    lb: { title: 'fastest rush', score: rushed ? +state.rush.toFixed(1) : null, label: rushed ? state.rush.toFixed(1) + ' s' : '', higher: false } });
+  IDLE.arm();
+}
+start();
+</script>
+</body>
+</html>

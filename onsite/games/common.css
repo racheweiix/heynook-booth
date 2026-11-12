@@ -1,0 +1,61 @@
+/* Booth 01 mini games: the vox-edit-style paper world, for touch. A 1920x1080 stage scaled to fit the screen. */
+@import url('assets/fonts/fonts.css');
+:root{--paper:#E7DDC6;--ink:#1D1B18;--mustard:#E9A923;--charcoal:#2A2826;--strip:#F6F1E6;--red:#C8321E;
+  --onsite:#3B40D8;--nook:#2F6BEF;--green:#22A06B;--orange:#E58A1F;--grey:#A7A9AC}
+html,body{margin:0;height:100%;background:#17140f;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--paper);font-family:Inter,system-ui,sans-serif;color:var(--ink)}
+.bg{position:absolute;inset:0;background:var(--paper);
+  background-image:radial-gradient(ellipse 60% 50% at 18% 28%,rgba(150,110,55,.13),transparent 70%),
+    radial-gradient(ellipse 45% 40% at 84% 72%,rgba(120,85,40,.12),transparent 70%),
+    linear-gradient(92deg,transparent 49.6%,rgba(90,70,40,.10) 50%,transparent 50.4%)}
+.grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.45;z-index:50;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .47  0 0 0 0 .36  0 0 0 .5 0'/></filter><rect width='320' height='320' filter='url(%23n)'/></svg>")}
+.vig{position:absolute;inset:0;pointer-events:none;z-index:51;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 60%,rgba(70,50,20,.22))}
+.news{position:absolute;background-color:#EFE7D3;opacity:.7;box-shadow:0 4px 8px rgba(40,28,10,.12);
+  background-image:repeating-linear-gradient(0deg,transparent 0 9px,rgba(60,50,35,.22) 9px 13px),linear-gradient(90deg,transparent 48%,#EFE7D3 48% 52%,transparent 52%)}
+.cut{filter:drop-shadow(0 10px 8px rgba(40,28,10,.28)) drop-shadow(0 2px 1px rgba(40,28,10,.25))}
+.strip{position:absolute;left:0;top:0;white-space:nowrap;background:var(--strip);color:var(--ink);font:38px/1 'Special Elite',monospace;padding:14px 26px 12px;
+  box-shadow:0 3px 0 rgba(0,0,0,.10),0 10px 18px rgba(40,28,10,.18);z-index:30}
+.strip .car{display:inline-block;width:3px;height:34px;background:var(--ink);vertical-align:-5px;margin-left:2px}
+.tape{position:absolute;width:86px;height:30px;background:rgba(232,220,170,.72);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.stamp{position:absolute;left:0;top:0;padding:10px 26px 6px;border:7px double currentColor;border-radius:12px;font:58px/1 'Archivo Black',sans-serif;
+  letter-spacing:.04em;mix-blend-mode:multiply;white-space:nowrap;z-index:40;pointer-events:none}
+.btn{position:absolute;font:34px/1 'Archivo Black',sans-serif;color:var(--ink);background:var(--strip);border:5px solid var(--ink);border-radius:16px;
+  padding:22px 34px;box-shadow:0 8px 0 var(--ink);cursor:pointer;z-index:45}
+.btn:active{transform:translateY(6px);box-shadow:0 2px 0 var(--ink)}
+.btn.main{background:var(--mustard)}
+.wipe{position:absolute;left:0;top:0;width:2100px;height:1080px;background:var(--charcoal);z-index:60;pointer-events:none}
+.card{position:absolute;background:#FBF8F1;box-shadow:0 0 0 6px #fff,0 18px 30px rgba(40,28,10,.3);border-radius:10px;z-index:42}
+/* paper people (shared by games B, C and D): a standing cut-out, feet at its anchor point */
+.pup{position:absolute;left:0;top:0;width:200px;height:420px;transform-origin:50% 100%;filter:drop-shadow(0 6px 0 rgba(40,28,10,.18))}
+.pup svg{width:100%;height:100%;overflow:visible}
+.pup svg *{stroke:#fff;stroke-width:7;paint-order:stroke;stroke-linejoin:round}
+.pup svg .ln{stroke:#1d1d2b;stroke-width:4;paint-order:normal;fill:none;stroke-linecap:round}
+.pup svg .nb,.pup svg .slot *{stroke-width:0}
+.pup .mf,.pup .mo,.pup .br{opacity:0}
+.pup.frown .ms,.pup.wow .ms{opacity:0}.pup.frown .mf,.pup.frown .br,.pup.wow .mo{opacity:1}
+.watch{position:absolute;left:0;top:0;z-index:31;width:150px;height:150px;border-radius:50%;background:var(--mustard);box-shadow:0 0 0 6px #fff,0 10px 16px rgba(40,28,10,.3);
+  display:flex;align-items:center;justify-content:center;font:900 54px 'Archivo Black'}
+.hud{position:absolute;left:0;top:0;z-index:31;background:var(--strip);padding:10px 18px 8px;font:24px/1.1 'Special Elite';box-shadow:0 6px 10px rgba(40,28,10,.18);white-space:nowrap}
+.hud b{font:400 30px 'Archivo Black';margin-left:8px}
+.res{width:100%;border-collapse:collapse;font:28px/1.3 'Special Elite';margin-top:18px}
+.res th{font:800 18px Inter;letter-spacing:.12em;text-transform:uppercase;color:#8a7a5a;text-align:center;padding:0 10px 10px}
+.res td{padding:12px 10px;border-top:2px dashed rgba(0,0,0,.15)}
+.res td.v{text-align:center;font:400 38px 'Archivo Black';width:220px}
+.res td.old{color:var(--red)}
+.hs .ln{fill:none;stroke:#1d1d2b;stroke-width:4;stroke-linecap:round}.hs .br,.hs .mf,.hs .mo{display:none}
+/* the leaderboard panel beside the result card */
+.lbp{left:1170px;top:150px;width:660px;padding:30px 38px 30px;box-sizing:border-box;z-index:43}
+.lbk{font:500 20px 'Special Elite';letter-spacing:.16em;color:#8a7a5a;text-transform:uppercase}
+.lr{display:flex;align-items:baseline;gap:22px;padding:12px 8px;border-top:2px dashed rgba(0,0,0,.14);font:30px 'Special Elite'}
+.lr:first-of-type{margin-top:14px}
+.lr span{font:400 26px 'Archivo Black';width:34px;color:#8a7a5a}.lr b{font:400 36px 'Archivo Black';letter-spacing:.12em;width:150px}.lr em{font-style:normal;margin-left:auto}
+.lr.me{background:var(--mustard);border-radius:10px}
+.lbe{font:28px 'Special Elite';margin-top:18px}.lbe b{font:400 30px 'Archivo Black'}
+.lbt{font:30px 'Special Elite';margin-top:12px}.lbt b{font:400 32px 'Archivo Black'}
+.lbs{display:flex;gap:16px;margin:16px 0 18px}
+.lbs i{width:84px;height:94px;border-bottom:6px solid var(--ink);font:400 64px/94px 'Archivo Black';text-align:center;font-style:normal}
+.lbg{display:grid;grid-template-columns:repeat(7,74px);gap:8px}
+.lbkey{height:74px;border:4px solid var(--ink);border-radius:12px;background:var(--strip);font:400 30px 'Archivo Black';color:var(--ink);box-shadow:0 5px 0 var(--ink);cursor:pointer;padding:0}
+.lbkey:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.lbkey.ok{background:var(--mustard);font-size:24px}.lbkey.ok.off{opacity:.4}
