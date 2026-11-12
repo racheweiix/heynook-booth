@@ -3,13 +3,19 @@
   const G = window.G = {};
   G.base = document.currentScript.src.replace(/common\.js.*$/, '');      // games/ folder (assets/ is linked inside it)
   G.stage = document.getElementById('stage');
+  // G.rot: an iPhone held upright shows the booth turned sideways to fill the screen (iPhone has no full screen). Only the
+  // stage turns; the page stays phone-sized (a wider page makes the phone zoom out). Once the phone itself is landscape,
+  // nothing is turned. A game opened from the turned booth gets ?turn in its address.
+  G.rot = /[?&]turn/.test(location.search);
   G.fit = () => {
-    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
-    G.s = s; G.ox = (innerWidth - 1920 * s) / 2; G.oy = (innerHeight - 1080 * s) / 2;
-    G.stage.style.transform = `translate(${G.ox}px,${G.oy}px) scale(${s})`;
+    const turn = G.turn = G.rot && innerHeight > innerWidth, W = turn ? innerHeight : innerWidth, H = turn ? innerWidth : innerHeight;
+    const s = Math.min(W / 1920, H / 1080);
+    G.s = s; G.ox = (W - 1920 * s) / 2; G.oy = (H - 1080 * s) / 2;
+    G.stage.style.transform = turn ? `translate(${innerWidth - G.oy}px,${G.ox}px) rotate(90deg) scale(${s})` : `translate(${G.ox}px,${G.oy}px) scale(${s})`;
   };
   addEventListener('resize', G.fit); G.fit();
-  G.pt = e => ({ x: (e.clientX - G.ox) / G.s, y: (e.clientY - G.oy) / G.s });
+  G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s, y: (y - G.oy) / G.s }; };   // screen point -> stage point
+  G.pt = e => G.toStage(e.clientX, e.clientY);
   G.$ = (html, parent = G.stage) => { const t = document.createElement('template'); t.innerHTML = html.trim(); const el = t.content.firstChild; parent.appendChild(el); return el; };
   G.wait = ms => new Promise(r => setTimeout(r, ms));
   let seed = 11; G.rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

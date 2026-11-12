@@ -136,8 +136,17 @@ function goFull(fromButton) {
   try { const p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(refused); } catch (e) { refused(); }
   setTimeout(refused, 1500);                                                             // some hosts never answer: treat silence as a no
 }
-const fsSync = () => fsb.classList.toggle('on', fsOK && !fsRefused && !fsOn() && (screen === 'attract' || screen === 'board'));   // never over a game's or video's own buttons
-fsb.addEventListener('click', () => goFull(true));
+// iPhone: no full screen at all, so the button turns the booth sideways to fill the upright phone (inside NookPass it
+// first opens the booth on its own page, already turned); tap again to turn it back
+const PHONE = !fsOK && (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1);
+function turnPhone(on) { G.rot = on; G.fit(); fsSync(); }
+const fsSync = () => fsb.classList.toggle('on', ((fsOK && !fsRefused && !fsOn()) || PHONE) && (screen === 'attract' || screen === 'board'));   // never over a game's or video's own buttons
+fsb.addEventListener('click', () => {
+  if (!PHONE) return goFull(true);
+  if (window.self !== window.top) { window.open(location.href.split('?')[0] + '?turn', '_blank'); return; }
+  turnPhone(!G.rot);
+});
+if (PHONE && /[?&]turn/.test(location.search)) turnPhone(true);
 document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 const TABLET = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1 || /[?&]kiosk/.test(location.search);   // iPad Safari calls itself a Mac but has touch points
 
@@ -384,7 +393,7 @@ function endVideo(t, watched) {
 function openGame(t) {
   screen = 'game'; fsSync(); clearTimeout(idleT);
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
-  frame.src = `../games/${t.game}/`; frame.style.display = 'block'; frame.focus();
+  frame.src = `../games/${t.game}/${G.rot ? '?turn' : ''}`; frame.style.display = 'block'; frame.focus();   // a turned booth opens its games turned
 }
 function closeGame() {
   frame.style.display = 'none'; frame.src = 'about:blank';

@@ -3,6 +3,7 @@
 :root{--paper:#E7DDC6;--ink:#1D1B18;--mustard:#E9A923;--charcoal:#2A2826;--strip:#F6F1E6;--red:#C8321E;
   --onsite:#3B40D8;--nook:#2F6BEF;--green:#22A06B;--orange:#E58A1F;--grey:#A7A9AC}
 html,body{margin:0;height:100%;background:#17140f;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920px stage can't widen it (phones zoomed out to fit it) */
 #stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--paper);font-family:Inter,system-ui,sans-serif;color:var(--ink)}
 .bg{position:absolute;inset:0;background:var(--paper);
   background-image:radial-gradient(ellipse 60% 50% at 18% 28%,rgba(150,110,55,.13),transparent 70%),

@@ -68,6 +68,7 @@
 .hn-kiosk .hn-player{width:min(100vw,177.78vh);border-radius:0}
 .hn-kiosk .hn-tip{display:none}
 .hn-framed{cursor:auto}
+.hn-kiosk.hn-turn{inset:auto;left:0;top:0;transform-origin:0 0}   /* an upright iPhone: the player turned sideways (sizes set in fitTurn) */
 @media (prefers-reduced-motion:reduce){.hn-cur i,.hn-cur.opening i{transition-duration:.01s}}
 </style>
 
@@ -135,7 +136,18 @@
     try { var p = (wrap.requestFullscreen || wrap.webkitRequestFullscreen).call(wrap); if (p && p.catch) p.catch(refused); } catch (e) { refused(); }
     setTimeout(refused, 1500);   // some hosts never answer: treat silence as a no
   }
-  function fsSync() { fsBtn.hidden = !(fsOK && !fsRefused && wrap.classList.contains('hn-kiosk') && !fsOn()); }
+  // iPhone: no full screen at all, so the button turns the player sideways to fill the upright phone (inside NookPass it
+  // first opens the player on its own page, already turned); tap again to turn it back
+  var phone = !fsOK && tablet, turnOn = false;
+  function fitTurn() {
+    var t = turnOn && innerHeight > innerWidth, W = t ? innerHeight : innerWidth, H = t ? innerWidth : innerHeight;
+    wrap.classList.toggle('hn-turn', t);
+    wrap.style.width = t ? W + 'px' : ''; wrap.style.height = t ? H + 'px' : '';
+    wrap.style.transform = t ? 'translateX(' + innerWidth + 'px) rotate(90deg)' : '';
+    player.style.width = t ? Math.min(W, H * 16 / 9) + 'px' : '';
+  }
+  addEventListener('resize', fitTurn);
+  function fsSync() { fsBtn.hidden = !(wrap.classList.contains('hn-kiosk') && ((fsOK && !fsRefused && !fsOn()) || phone)); }
   document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 
   function show(v) { vMain.classList.toggle('on', v === vMain); vLoop.classList.toggle('on', v === vLoop); }
@@ -217,7 +229,12 @@
   Array.prototype.forEach.call(hits.children, function (b) { b.addEventListener('click', function () { pick(b.dataset.b); }); });
   $('hn-again').addEventListener('click', again);
   $('hn-restart').addEventListener('click', restart);
-  fsBtn.addEventListener('click', function () { goFull(true); });
+  fsBtn.addEventListener('click', function () {
+    if (!phone) return goFull(true);
+    if (framed) { window.open(location.href.split('?')[0].split('#')[0] + '?kiosk&turn', '_blank'); return; }
+    turnOn = !turnOn; fitTurn();
+  });
+  if (phone && /[?&]turn/.test(location.search)) { turnOn = true; fitTurn(); }
 
   // the first tap unlocks sound for both video players and the whoosh (browsers need one tap before playing sound)
   startBtn.addEventListener('click', function () {

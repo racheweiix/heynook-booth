@@ -187,7 +187,7 @@ const PEOPLE = [
 const CY = [150, 445, 740], CX = 1240;                           // the right-hand column: three copies, later three screens
 let state = {}, timer = null, d3s = [];
 const face = (o, size = 54) => G.headSVG(o, '#E9EEF5');
-function stagePos(el) { const r = el.getBoundingClientRect(); return { x: (r.left + r.width / 2 - G.ox) / G.s, y: (r.top + r.height / 2 - G.oy) / G.s, w: r.width / G.s, h: r.height / G.s }; }
+function stagePos(el) { const r = el.getBoundingClientRect(), c = G.toStage(r.left + r.width / 2, r.top + r.height / 2); return { x: c.x, y: c.y, w: (G.turn ? r.height : r.width) / G.s, h: (G.turn ? r.width : r.height) / G.s }; }
 async function note(text, x, y, color, r = -3) {
   const e = $(`<div class="note" style="color:${color}">${text}</div>`); G.sfx('stamp', -14);
   await tween(.14, k => place(e, x, y, r, 1.6 - .6 * k)); return e;
