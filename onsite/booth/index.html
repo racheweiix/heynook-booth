@@ -63,8 +63,10 @@
 #vplay video{position:absolute;inset:0;width:1920px;height:1080px}
 #game{position:fixed;inset:0;width:100%;height:100%;border:0;display:none;z-index:100;background:#17140f}
 /* full screen on a tablet: the first "Tap to start" asks for it; this button brings it back if someone leaves it */
-#fsb{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:101;width:54px;height:54px;border:0;border-radius:14px;
-  background:rgba(255,255,255,.16);color:#fff;font:28px/1 system-ui,sans-serif;display:none;align-items:center;justify-content:center;cursor:pointer}
+#fsb{position:fixed;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));z-index:101;border:0;border-radius:12px;padding:12px 18px 11px;
+  background:#2A2826;color:#F5EFE1;font:400 19px/1 'Archivo Black',Inter,sans-serif;letter-spacing:.04em;box-shadow:0 0 0 3px #F5EFE1,0 6px 12px rgba(0,0,0,.3);
+  display:none;align-items:center;gap:10px;cursor:pointer}
+#fsb svg{width:20px;height:20px}
 #fsb.on{display:flex}
 </style>
 </head>
@@ -78,7 +80,7 @@
   <div class="grain"></div><div class="vig"></div>
 </div>
 <iframe id="game" allow="autoplay; fullscreen" title="Mini game"></iframe>
-<button id="fsb" aria-label="Full screen">⤢</button>
+<button id="fsb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Full screen</button>
 <script src="../games/common.js"></script>
 <script>
 const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
@@ -122,14 +124,14 @@ function goFull() {
   if (!fsOK || fsOn()) return;
   try { const p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(() => {}); } catch (e) {}
 }
-const fsSync = () => fsb.classList.toggle('on', fsOK && !fsOn());
+const fsSync = () => fsb.classList.toggle('on', fsOK && !fsOn() && (screen === 'attract' || screen === 'board'));   // never over a game's or video's own buttons
 fsb.addEventListener('click', goFull);
 document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 const TABLET = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1 || /[?&]kiosk/.test(location.search);   // iPad Safari calls itself a Mac but has touch points
 
 // ---------- the start screen ----------
 function attract(reset) {
-  clearScreen(); screen = 'attract'; clearTimeout(idleT);
+  clearScreen(); screen = 'attract'; fsSync(); clearTimeout(idleT);
   if (reset) played.clear();
   ground(840); sun(960, 560, 250);
   const pv = cut('printer-pvc.png', 520, 848 - 492, 400, 0, 10), bp = cut('printer-badge.png', 950, 848 - 394, 430, 0, 11);
@@ -161,7 +163,7 @@ function illus(t) {
   return `<img src="${IMG}badge-microsoft.png" style="left:10px;top:24px;height:176px;transform:rotate(-12deg)" class="cut"><img src="${IMG}badge-servicenow.png" style="left:150px;top:24px;height:176px;transform:rotate(12deg)" class="cut"><img src="${IMG}badge-google.png" style="left:76px;top:8px;height:190px" class="cut">`;
 }
 async function board(fromGame) {
-  clearScreen(); screen = 'board'; armIdle();
+  clearScreen(); screen = 'board'; fsSync(); armIdle();
   const run = RUN;
   const s = strip('Pick one to see it work.', 90, 40, { rot: -1 });
   const hg = $(`<div class="sect">GAMES <em>play &amp; beat today's best</em></div>`, L); place(hg, 117, 138, -1);
@@ -329,7 +331,7 @@ async function hero(k, run, step) {          // step 0: lands with the first lin
   }
 }
 async function chapter(t) {
-  clearScreen(); screen = 'chapter'; armIdle(); const run = RUN;
+  clearScreen(); screen = 'chapter'; fsSync(); armIdle(); const run = RUN;
   ground(860);
   if (!t.game) played.add(t.k);
   const c = CH[t.k];
@@ -347,12 +349,12 @@ async function chapter(t) {
 // ---------- a video (B and E) ----------
 const vplay = document.getElementById('vplay'), vid = document.getElementById('vid');
 function playVideo(t) {
-  clearScreen(); screen = 'video'; clearTimeout(idleT); const run = RUN;
+  clearScreen(); screen = 'video'; fsSync(); clearTimeout(idleT); const run = RUN;
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
   vplay.style.display = 'block'; vid.src = t.video; vid.currentTime = 0; vid.play().catch(() => {});
   const back = button('✕ Back', 1660, 26, () => endVideo(t, false)); back.style.zIndex = 46; back.classList.add('vbtn'); back.style.font = "400 26px 'Archivo Black'"; back.style.padding = '14px 22px';
   vid.onended = () => {
-    if (run !== RUN) return; played.add(t.k); back.remove(); armIdle(); screen = 'videoEnd';
+    if (run !== RUN) return; played.add(t.k); back.remove(); armIdle(); screen = 'videoEnd'; fsSync();
     const again = button('Watch again', 600, 900, () => { G.stage.querySelectorAll('.vbtn').forEach(b => b.remove()); playVideo(t); }); again.classList.add('vbtn'); again.style.zIndex = 46;
     const bb = button('Back to the board ▸', 960, 900, () => endVideo(t, true), true); bb.classList.add('vbtn'); bb.style.zIndex = 46;
   };
@@ -367,7 +369,7 @@ function endVideo(t, watched) {
 
 // ---------- a game ----------
 function openGame(t) {
-  screen = 'game'; clearTimeout(idleT);
+  screen = 'game'; fsSync(); clearTimeout(idleT);
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
   frame.src = `../games/${t.game}/`; frame.style.display = 'block'; frame.focus();
 }
