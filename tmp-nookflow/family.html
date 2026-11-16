@@ -1,0 +1,839 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,700&display=swap" rel="stylesheet">
+<style>
+/* Idea: the whole day is one 3 x 3 board, like the passport. The page is a fairground: striped bunting,
+   a ticket-booth for the passport, the nine stops laid out as the board itself, lines of three for prizes. */
+.ev-family {
+  color-scheme: light;
+  --peach: #FDEFE6;
+  --blush: #FAD1E1;
+  --cream: #FFF8F2;
+  --pink: #E8458F;
+  --pink-deep: #C2185B;
+  --pink-soft: #F68BBE;
+  --orange: #F7894A;
+  --coral: #F06A6E;
+  --magenta: #EA4C97;
+  --yellow: #F5B700;
+  --yellow-soft: #FFE27A;
+  --red: #E2453A;
+  --ink: #2A1A22;
+  --ink-strong: #1C1218;
+  --mute: #5B4A53;
+  --dash: #CDBFC7;
+  --sunset: linear-gradient(100deg, #F7894A 0%, #F06A6E 45%, #EA4C97 100%);
+  --font: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gut: clamp(16px, 4vw, 40px);
+  --r: 22px;
+}
+.ev-family, .ev-family * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+.ev-family { margin: 0; background: var(--peach); color: var(--ink); font: 400 17px/1.6 var(--font); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+.ev-family a { color: inherit; }
+.ev-family img, .ev-family svg, .ev-family iframe { max-width: 100%; display: block; }
+.ev-family h1, .ev-family h2, .ev-family h3 { margin: 0; font-weight: 800; letter-spacing: -.035em; line-height: 1.04; color: var(--ink-strong); text-wrap: balance; }
+.ev-family h2 { font-size: clamp(32px, 4.6vw, 54px); }
+.ev-family h3 { font-size: 21px; letter-spacing: -.02em; line-height: 1.15; }
+.ev-family section { padding-block: clamp(64px, 9vw, 112px); }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: var(--gut); }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font: 700 13px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--pink-deep); }
+.kicker::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--yellow); box-shadow: 14px 0 0 var(--pink), 28px 0 0 var(--red); margin-right: 30px; }
+.sec-head { display: grid; gap: 14px; max-width: 660px; margin-bottom: 44px; }
+.sec-head .lead { margin: 0; color: var(--mute); font-size: 18px; max-width: 54ch; }
+.sec-head.center { margin-inline: auto; text-align: center; justify-items: center; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 999px; font: 700 16px/1 var(--font); text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: transform .15s ease-out, background-color .15s, box-shadow .15s; }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.btn-primary { background: var(--pink-deep); color: #fff; box-shadow: 0 6px 0 -1px rgba(120,10,60,.28); }
+.btn-primary:hover { transform: translateY(-2px); background: #AD1250; }
+.btn-ghost { background: rgba(255,255,255,.7); border-color: var(--ink); color: var(--ink); }
+.btn-ghost:hover { background: #fff; }
+.ev-family a:focus-visible, .btn:focus-visible, .mt:focus-visible, .qa summary:focus-visible, .ov-close:focus-visible, .stop:focus-visible { outline: 3px solid #00B0F0; outline-offset: 3px; }
+
+/* nav */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 16px; }
+.brand { flex: none; white-space: nowrap; display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 18px; letter-spacing: -.02em; text-decoration: none; }
+.brand .ic { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(145deg, #5C86FF, #2747D8); display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35), 0 2px 8px rgba(0,0,0,.18); flex: none; }
+.brand .ic svg { width: 22px; height: 22px; }
+.nav-links { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; font-weight: 700; font-size: 15px; }
+.nav-links a { text-decoration: none; color: var(--mute); }
+.nav-links a:hover { color: var(--pink-deep); }
+.nav .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
+@media (max-width: 880px) { .nav-links { display: none; } }
+@media (max-width: 420px) { .brand .brand-full { display: none; } }
+
+/* hero */
+.hero { position: relative; background:
+  radial-gradient(circle, rgba(244,150,190,.55) 3.4px, transparent 3.8px) 0 0 / 46px 46px,
+  radial-gradient(circle, rgba(246,192,90,.6) 3.4px, transparent 3.8px) 23px 23px / 46px 46px,
+  repeating-linear-gradient(112deg, #FBDCE8 0 36px, var(--peach) 36px 72px);
+  padding-block: 0 clamp(56px, 7vw, 96px); overflow: hidden; }
+.bunting { width: 100%; height: 28px; }
+.bunting svg { width: 100%; height: 28px; max-width: none; }
+.bunting .flags { transform-origin: 50% 0; animation: sway 6s ease-in-out infinite alternate; }
+@keyframes sway { from { transform: rotate(-.4deg); } to { transform: rotate(.4deg); } }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: clamp(32px, 5vw, 72px); align-items: center; padding-top: clamp(36px, 6vw, 80px); }
+.hero h1 { font-size: clamp(38px, 5.4vw, 76px); letter-spacing: -.05em; line-height: .95; margin-top: 18px; }
+.hero h1 .ln { display: block; }
+.hero h1 .pk { color: var(--pink); }
+.hero .lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--mute); max-width: 40ch; margin: 24px 0 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0 30px; padding: 0; list-style: none; }
+.facts li { display: inline-flex; align-items: center; gap: 8px; background: var(--cream); border: 2px dashed var(--dash); border-radius: 14px; padding: 7px 14px; font-weight: 700; font-size: 15px; }
+.facts li i { width: 10px; height: 10px; border-radius: 50%; background: var(--pink); flex: none; }
+.facts li:nth-child(2) i { background: var(--yellow); }
+.facts li:nth-child(3) i { background: var(--red); }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.scene { position: relative; aspect-ratio: 520 / 470; width: 100%; max-width: 580px; justify-self: center; }
+.scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scene .wheel { transform-origin: 170px 196px; animation: spin 60s linear infinite; }
+.scene .bal { animation: bob 3.4s ease-in-out infinite alternate; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bob { to { transform: translateY(-8px); } }
+.scene .toast { position: absolute; left: 50%; top: 2%; transform: translateX(-50%); background: var(--pink-deep); color: #fff; font-weight: 700; font-size: clamp(12.5px, 1.4vw, 15px); padding: 10px 16px; border-radius: 16px; white-space: nowrap; box-shadow: 0 14px 30px -12px rgba(120,10,60,.6); animation: drop .6s cubic-bezier(.2,.8,.2,1.15) 1.5s both; }
+@keyframes drop { from { transform: translate(-50%, -30px); opacity: 0; } }
+.scene .tile { position: absolute; width: 27%; }
+.scene .t1 { left: 4%; top: 35%; --r: -4deg; animation-delay: .2s; }
+.scene .t2 { left: 36.5%; top: 47%; --r: 2deg; animation-delay: .55s; }
+.scene .t3 { left: 69%; top: 59%; --r: -2deg; animation-delay: .9s; }
+
+/* the stamp tile, shared with the passport */
+.tile { aspect-ratio: 1; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8px 6px; gap: 3px; background: rgba(249,241,245,.92); border: 2.5px dashed var(--dash); color: var(--ink); transform: rotate(var(--r, 0deg)); }
+.tile b { font-size: clamp(11.5px, 1.35vw, 15px); line-height: 1.2; font-weight: 700; letter-spacing: -.01em; }
+.tile small { font-size: clamp(10px, 1.1vw, 12.5px); }
+.tile.done { background: var(--pink); border: 2.5px solid var(--pink); color: #fff; box-shadow: 0 6px 0 -1px rgba(170,30,95,.22), 0 12px 20px -10px rgba(170,30,95,.55); }
+.tile.free { background: var(--pink); border: 2.5px solid #F5B700; color: #fff; box-shadow: 0 0 0 4px rgba(245,183,0,.45), 0 0 24px rgba(245,183,0,.55); }
+.tile .ck { width: 34%; aspect-ratio: 1; border-radius: 50%; border: 2.5px solid #fff; display: grid; place-items: center; margin-bottom: 4px; }
+.tile .ck svg { width: 55%; height: 55%; }
+.tile .star { width: 38%; height: auto; margin-bottom: 2px; }
+.scene .tile { animation: stampIn .75s cubic-bezier(.2,.8,.2,1.3) both; }
+@keyframes stampIn { 0% { transform: scale(1.5) rotate(var(--r, 0deg)); opacity: 0; } 55% { transform: scale(.93) rotate(var(--r, 0deg)); opacity: 1; } 100% { transform: scale(1) rotate(var(--r, 0deg)); } }
+@media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; } .scene { max-width: 520px; } }
+
+/* how it works: a ticket booth holds the passport */
+.how { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: clamp(40px, 6vw, 96px); align-items: start; }
+.booth { position: sticky; top: 24px; width: 100%; max-width: 400px; margin: 0 auto; }
+.canopy { position: relative; z-index: 2; margin: 0 -10px -6px; }
+.canopy .sign { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); background: var(--yellow); color: var(--ink-strong); font-weight: 800; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; padding: 7px 16px; border-radius: 10px; white-space: nowrap; box-shadow: 0 4px 0 rgba(140,58,85,.35); }
+.canopy svg { width: 100%; height: auto; filter: drop-shadow(0 6px 6px rgba(140,58,85,.25)); }
+.phone { position: relative; border-radius: 46px; background: #2A1A22; padding: 11px; box-shadow: 0 34px 60px -28px rgba(120,10,60,.55), inset 0 0 0 2px #4A3540; }
+.phone iframe { width: 100%; height: 720px; border: 0; border-radius: 36px; background: var(--peach); }
+.booth-cap { text-align: center; font-size: 15px; color: var(--mute); margin: 18px 0 0; }
+.booth .btn { width: 100%; margin-top: 14px; }
+.tickets { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; counter-reset: t; }
+.ticket { position: relative; display: grid; grid-template-columns: 84px minmax(0, 1fr); background: var(--cream); border-radius: 18px;
+  -webkit-mask: radial-gradient(circle 11px at 84px 0, #0000 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 11px at 84px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  mask: radial-gradient(circle 11px at 84px 0, #0000 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 11px at 84px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat; }
+.ticket .stub { display: grid; place-items: center; border-right: 2.5px dashed var(--dash); font-weight: 800; font-size: 34px; letter-spacing: -.04em; color: var(--pink); }
+.ticket:nth-child(2) .stub { color: var(--orange); }
+.ticket:nth-child(3) .stub { color: var(--red); }
+.ticket:nth-child(4) .stub { color: #C99000; }
+.ticket .body { padding: 20px 22px; }
+.ticket h3 { margin-bottom: 6px; }
+.ticket .txt { margin: 0; color: var(--mute); font-size: 16px; }
+.how-note { margin-top: 28px; padding: 20px 22px; border-radius: 18px; background: var(--blush); display: flex; gap: 16px; align-items: center; font-size: 16px; }
+.how-note .pill { flex: none; display: inline-flex; align-items: center; gap: 8px; background: var(--pink); color: #fff; font-weight: 700; font-size: 14px; padding: 9px 14px; border-radius: 999px; white-space: nowrap; }
+.how-note .pill svg { width: 18px; height: 18px; }
+@media (max-width: 940px) { .how { grid-template-columns: 1fr; } .booth { position: static; order: 2; } .phone iframe { height: 640px; } }
+@media (max-width: 480px) { .ticket { grid-template-columns: 64px minmax(0, 1fr);
+  -webkit-mask: radial-gradient(circle 10px at 64px 0, #0000 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 10px at 64px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  mask: radial-gradient(circle 10px at 64px 0, #0000 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 10px at 64px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat; }
+  .ticket .stub { font-size: 28px; } .ticket .body { padding: 16px 16px; } .how-note { flex-direction: column; align-items: flex-start; } }
+
+/* the board: the programme laid out as the passport grid */
+.board-sec { background: var(--cream); border-block: 2.5px dashed var(--dash); }
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 1.8vw, 22px); list-style: none; margin: 0; padding: 0; }
+.stop { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 24px 24px 20px; border-radius: 22px; background: #FBF1F5; border: 2.5px dashed var(--dash); transform: rotate(var(--r, 0deg)); transition: transform .3s cubic-bezier(.2,.8,.2,1.3), border-color .25s, background-color .25s, box-shadow .25s; }
+.stop:hover, .stop:focus-within { border-style: solid; border-color: var(--pink); background: #fff; transform: rotate(0deg) translateY(-3px); box-shadow: 0 6px 0 -1px rgba(170,30,95,.18), 0 18px 30px -18px rgba(170,30,95,.5); }
+.stop .num { width: 42px; height: 42px; border-radius: 50%; border: 2.5px solid #9C8C95; display: grid; place-items: center; font-weight: 800; font-size: 17px; transition: background-color .25s, border-color .25s, color .25s; }
+.stop:hover .num { background: var(--pink); border-color: var(--pink); color: #fff; }
+.stop .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.stop .ico { width: 44px; height: 44px; color: var(--pink); }
+.stop .txt { margin: 0; color: var(--mute); font-size: 15.5px; line-height: 1.5; }
+.stop .foot { margin-top: auto; padding-top: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13.5px; color: var(--mute); font-weight: 500; }
+.chip { display: inline-flex; align-items: center; font-weight: 800; font-size: 14px; padding: 4px 12px; border-radius: 999px; background: var(--blush); color: var(--pink-deep); }
+.stop.free { background: var(--pink); border: 2.5px solid var(--yellow); color: #fff; box-shadow: 0 0 0 5px rgba(245,183,0,.4), 0 0 30px rgba(245,183,0,.5); }
+.stop.free h3 { color: #fff; }
+.stop.free .txt, .stop.free .foot { color: #fff; }
+.stop.free .chip { background: var(--yellow); color: var(--ink-strong); }
+.stop.free .star { width: 46px; height: 46px; }
+.board-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 26px; margin-top: 34px; font-size: 15px; color: var(--mute); }
+.board-key span { display: inline-flex; align-items: center; gap: 8px; }
+.board-key i { width: 16px; height: 16px; border-radius: 5px; border: 2px dashed var(--dash); background: #FBF1F5; }
+.board-key i.f { border: 2px solid var(--yellow); background: var(--pink); }
+@media (max-width: 860px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stop.free { order: -1; grid-column: 1 / -1; } }
+@media (max-width: 560px) { .board { grid-template-columns: minmax(0, 1fr); } .stop { padding: 20px; } }
+
+/* prizes */
+.prizes { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 20px; }
+.card { border-radius: 30px; padding: clamp(24px, 3.4vw, 40px); }
+.card .txt { color: var(--mute); margin: 10px 0 0; }
+.p-lines { background: #fff; border: 2.5px solid var(--blush); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 260px); gap: 28px; align-items: center; }
+.p-lines .tag, .p-grand .tag { display: inline-block; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--pink-deep); margin-bottom: 12px; }
+.p-lines h3, .p-grand h3 { font-size: clamp(26px, 2.6vw, 34px); letter-spacing: -.035em; }
+.mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mt { aspect-ratio: 1; border-radius: 12px; border: 2.5px dashed var(--dash); background: #FBF1F5; display: grid; place-items: center; font: 800 16px/1 var(--font); color: #7A6470; cursor: pointer; transition: background-color .2s, border-color .2s, color .2s, transform .2s, box-shadow .3s; }
+.mt:hover { border-color: var(--pink-soft); }
+.mt[aria-pressed="true"] { background: var(--pink); border: 2.5px solid var(--pink); color: #fff; transform: rotate(-2deg); }
+.mt.free { background: var(--pink); border: 2.5px solid var(--yellow); cursor: default; }
+.mt.free svg { width: 55%; height: 55%; }
+.mt.lit { box-shadow: 0 0 0 4px #FFC81E, 0 0 18px #FFC81E; }
+.mini-read { margin-top: 14px; min-height: 48px; font-size: 15px; font-weight: 700; color: var(--pink-deep); text-align: center; }
+.mini-reset { display: block; margin: 4px auto 0; background: none; border: 0; font: 700 14px/1 var(--font); color: var(--mute); text-decoration: underline; cursor: pointer; padding: 8px; }
+.mini-reset:focus-visible { outline: 3px solid #00B0F0; outline-offset: 2px; border-radius: 6px; }
+.lines-list { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 8px; font-size: 15.5px; }
+.lines-list li { display: flex; gap: 10px; align-items: baseline; }
+.lines-list b { flex: none; min-width: 26px; font-weight: 800; color: var(--pink); }
+.p-grand { position: relative; overflow: hidden; background: var(--yellow-soft); display: flex; flex-direction: column; }
+.p-grand .tag { color: #8A5A00; }
+.p-grand .txt { color: #5A4320; }
+.p-grand .cup { width: 86px; height: 86px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 42px; line-height: 1; margin-bottom: 22px; box-shadow: 0 0 0 7px rgba(255,255,255,.5); }
+.full { display: grid; grid-template-columns: repeat(3, 34px); gap: 6px; margin-top: auto; padding-top: 28px; }
+.full i { aspect-ratio: 1; border-radius: 8px; background: var(--pink); transform: rotate(var(--r, 0deg)); }
+.full i.s { background: var(--pink); box-shadow: inset 0 0 0 2.5px var(--yellow); }
+.pts { margin-top: 20px; grid-column: 1 / -1; }
+.bar { height: 17px; border-radius: 999px; background: rgba(205,185,195,.5); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 50%; border-radius: inherit; background: repeating-linear-gradient(120deg, #EA4C97 0 12px, #F68BBE 12px 24px); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.bar-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 14px; color: var(--mute); font-variant-numeric: tabular-nums; }
+@media (max-width: 1000px) { .prizes { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .p-lines { grid-template-columns: 1fr; } .mini-wrap { max-width: 280px; width: 100%; margin: 0 auto; } }
+
+/* faq */
+.faq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.qa { background: var(--cream); border-radius: 18px; border: 2.5px dashed var(--dash); transition: border-color .2s; }
+.qa[open] { border-style: solid; border-color: var(--pink-soft); background: #fff; }
+.qa summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 20px; font-weight: 700; font-size: 17.5px; letter-spacing: -.01em; border-radius: 16px; }
+.qa summary::-webkit-details-marker { display: none; }
+.qa summary::after { content: "+"; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--blush); color: var(--pink-deep); display: grid; place-items: center; font-size: 20px; font-weight: 700; transition: transform .2s; }
+.qa[open] summary::after { transform: rotate(45deg); }
+.qa .ans { margin: 0; padding: 0 20px 20px; color: var(--mute); font-size: 16px; }
+@media (max-width: 760px) { .faq { grid-template-columns: 1fr; } }
+
+/* closing */
+.closing { position: relative; overflow: hidden; background: var(--sunset); color: #fff; border-radius: 36px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: center; padding: 64px clamp(24px, 5vw, 64px) 48px; margin-block: 0 40px; }
+.closing .bunting { position: absolute; left: 0; right: 0; top: 0; }
+.closing h2 { color: #fff; font-size: clamp(34px, 5vw, 60px); }
+.closing .txt { margin: 14px 0 28px; font-size: 18px; max-width: 44ch; }
+.closing .btn-white { background: #fff; color: var(--pink-deep); box-shadow: 0 6px 0 -1px rgba(120,10,60,.3); }
+.closing .btn-white:hover { transform: translateY(-2px); }
+.closing .btn-line { border-color: #fff; color: #fff; }
+.closing .btn-line:hover { background: rgba(255,255,255,.14); }
+.closing .art { width: 100%; height: auto; }
+.closing .wheel { transform-origin: 110px 120px; animation: spin 40s linear infinite; }
+.closing .bal { animation: bob 3s ease-in-out infinite alternate; }
+@media (max-width: 760px) { .closing { grid-template-columns: 1fr; padding-top: 56px; } .closing .art { max-width: 220px; justify-self: center; } }
+
+.site-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; padding-block: 8px 40px; color: var(--mute); font-size: 14px; }
+.ev-family footer b { color: var(--ink); font-weight: 800; }
+
+/* full-screen passport */
+.ov { position: fixed; inset: 0; z-index: 100; background: rgba(42,26,34,.82); display: grid; place-items: center; padding: 16px; }
+.ov[hidden] { display: none; }
+.ov-frame { position: relative; width: min(430px, 100%); height: min(900px, 100%); }
+.ov-frame iframe { width: 100%; height: 100%; border: 0; border-radius: 28px; background: var(--peach); box-shadow: 0 40px 80px -30px rgba(0,0,0,.7); }
+.ov-close { position: absolute; top: 0; right: 0; z-index: 2; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; background: #fff; color: var(--ink); font: 700 15px/1 var(--font); cursor: pointer; box-shadow: 0 10px 24px -10px rgba(0,0,0,.6); transform: translate(calc(100% + 16px), 0); }
+.ov-close svg { width: 18px; height: 18px; }
+@media (max-width: 640px) { .ov { padding: 0; } .ov-frame { width: 100%; height: 100%; } .ov-frame iframe { border-radius: 0; } .ov-close { transform: none; top: auto; bottom: 86px; right: 50%; margin-right: -50px; } }
+.no-scroll { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+}
+
+.ev-family { min-height: 100vh; position: relative; }
+</style>
+<div class="ev-family">
+<div class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="#top"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 18V6.5l11 11V6"/></svg></span><span>EventNook <span class="brand-full">Family Day</span></span></a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#board">The nine stops</a></li>
+      <li><a href="#prizes">Prizes</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a class="btn btn-primary" href="#how">Try the passport</a>
+  </nav>
+</div>
+
+<header class="hero" id="top">
+  <div class="bunting" aria-hidden="true"><svg viewBox="0 0 1440 28" preserveAspectRatio="xMidYMin slice"><g class="flags"><path d="M0 0h36l-18 28z" fill="#E8458F"/><path d="M36 0h36l-18 28z" fill="#F5B700"/><path d="M72 0h36l-18 28z" fill="#E2453A"/><path d="M108 0h36l-18 28z" fill="#E8458F"/><path d="M144 0h36l-18 28z" fill="#F5B700"/><path d="M180 0h36l-18 28z" fill="#E2453A"/><path d="M216 0h36l-18 28z" fill="#E8458F"/><path d="M252 0h36l-18 28z" fill="#F5B700"/><path d="M288 0h36l-18 28z" fill="#E2453A"/><path d="M324 0h36l-18 28z" fill="#E8458F"/><path d="M360 0h36l-18 28z" fill="#F5B700"/><path d="M396 0h36l-18 28z" fill="#E2453A"/><path d="M432 0h36l-18 28z" fill="#E8458F"/><path d="M468 0h36l-18 28z" fill="#F5B700"/><path d="M504 0h36l-18 28z" fill="#E2453A"/><path d="M540 0h36l-18 28z" fill="#E8458F"/><path d="M576 0h36l-18 28z" fill="#F5B700"/><path d="M612 0h36l-18 28z" fill="#E2453A"/><path d="M648 0h36l-18 28z" fill="#E8458F"/><path d="M684 0h36l-18 28z" fill="#F5B700"/><path d="M720 0h36l-18 28z" fill="#E2453A"/><path d="M756 0h36l-18 28z" fill="#E8458F"/><path d="M792 0h36l-18 28z" fill="#F5B700"/><path d="M828 0h36l-18 28z" fill="#E2453A"/><path d="M864 0h36l-18 28z" fill="#E8458F"/><path d="M900 0h36l-18 28z" fill="#F5B700"/><path d="M936 0h36l-18 28z" fill="#E2453A"/><path d="M972 0h36l-18 28z" fill="#E8458F"/><path d="M1008 0h36l-18 28z" fill="#F5B700"/><path d="M1044 0h36l-18 28z" fill="#E2453A"/><path d="M1080 0h36l-18 28z" fill="#E8458F"/><path d="M1116 0h36l-18 28z" fill="#F5B700"/><path d="M1152 0h36l-18 28z" fill="#E2453A"/><path d="M1188 0h36l-18 28z" fill="#E8458F"/><path d="M1224 0h36l-18 28z" fill="#F5B700"/><path d="M1260 0h36l-18 28z" fill="#E2453A"/><path d="M1296 0h36l-18 28z" fill="#E8458F"/><path d="M1332 0h36l-18 28z" fill="#F5B700"/><path d="M1368 0h36l-18 28z" fill="#E2453A"/><path d="M1404 0h36l-18 28z" fill="#E8458F"/></g></svg></div>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker">EventNook Family Day</span>
+      <h1><span class="ln">Play every stop.</span><span class="ln pk">Fill the board.</span></h1>
+      <p class="lede">A family day out with eight play stops and a free centre square. Every stop stamps your digital passport. Three in a row wins a mini prize, and a full board puts your family in the grand prize draw.</p>
+      <ul class="facts">
+        <li><i></i>8 play stops, 1 pt each</li>
+        <li><i></i>Free centre square</li>
+        <li><i></i>Mini prizes and a grand draw</li>
+      </ul>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#how">See how the passport works</a>
+        <a class="btn btn-ghost" href="#board">Meet the nine stops</a>
+      </div>
+    </div>
+
+    <div class="scene" aria-hidden="true">
+      <svg viewBox="0 0 520 470">
+        <g stroke="#7A6470" stroke-width="4" stroke-linecap="round"><path d="M170 196 112 440M170 196l58 244"/></g>
+        <g class="wheel">
+          <circle cx="170" cy="196" r="118" fill="none" stroke="#E8458F" stroke-width="5"/>
+          <circle cx="170" cy="196" r="70" fill="none" stroke="#F29BC0" stroke-width="2"/>
+          <g stroke="#F29BC0" stroke-width="2.5"><path d="M170 196L288.0 196.0"/><path d="M170 196L253.4 279.4"/><path d="M170 196L170.0 314.0"/><path d="M170 196L86.6 279.4"/><path d="M170 196L52.0 196.0"/><path d="M170 196L86.6 112.6"/><path d="M170 196L170.0 78.0"/><path d="M170 196L253.4 112.6"/></g>
+          <g><circle cx="288.0" cy="196.0" r="13" fill="#F5B700"/><circle cx="253.4" cy="279.4" r="13" fill="#E2453A"/><circle cx="170.0" cy="314.0" r="13" fill="#E8458F"/><circle cx="86.6" cy="279.4" r="13" fill="#F5B700"/><circle cx="52.0" cy="196.0" r="13" fill="#E2453A"/><circle cx="86.6" cy="112.6" r="13" fill="#E8458F"/><circle cx="170.0" cy="78.0" r="13" fill="#F5B700"/><circle cx="253.4" cy="112.6" r="13" fill="#E2453A"/></g>
+          <circle cx="170" cy="196" r="12" fill="#E8458F"/>
+        </g>
+        <g>
+          <path d="M318 330 384 236l66 94z" fill="#E2453A"/>
+          <path d="M384 236l-18 94h15zM384 236l18 94h-15z" fill="#fff"/>
+          <rect x="328" y="328" width="112" height="112" fill="#fff"/>
+          <g fill="#E2453A"><rect x="328" y="328" width="18" height="112"/><rect x="364" y="328" width="18" height="112"/><rect x="400" y="328" width="18" height="112"/></g>
+          <rect x="322" y="322" width="124" height="11" rx="3" fill="#F5B700"/>
+          <path d="M366 440v-38a18 18 0 0 1 36 0v38z" fill="#8C3A55"/>
+          <path d="M384 236v-32" stroke="#7A6470" stroke-width="3"/><path d="M384 204l22 7-22 7z" fill="#F5B700"/>
+        </g>
+        <g transform="translate(-10 0)"><g class="bal">
+          <path d="M452 168l20 70M478 146l-4 92M502 172l-28 66" stroke="#7A6470" stroke-width="1.6" fill="none"/>
+          <ellipse cx="450" cy="148" rx="21" ry="25" fill="#E2453A"/><ellipse cx="478" cy="124" rx="21" ry="25" fill="#E8458F"/><ellipse cx="504" cy="154" rx="19" ry="23" fill="#F5B700"/>
+          <path d="M443 136q4-8 11-9M471 112q4-8 11-9" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/>
+        </g></g>
+        <path d="M14 441H506" stroke="#9C8C95" stroke-width="2.5" stroke-dasharray="6 7"/>
+      </svg>
+      <div class="toast">Three in a row! Mini prize unlocked 🎁</div>
+      <div class="tile done t1"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><b>Mini Bowling</b><small>Collected · 1 pt</small></div>
+      <div class="tile free t2"><svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.2 6.6.7-5 4.5 1.4 6.6L12 17.2l-5.9 3.3 1.4-6.6-5-4.5 6.6-.7z" fill="#F5B700"/></svg><b>Free pass</b><small>Collected</small></div>
+      <div class="tile done t3"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><b>Pop the Balloon</b><small>Collected · 1 pt</small></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <section id="how" class="how">
+    <div class="booth">
+      <div class="canopy" aria-hidden="true">
+        <span class="sign">Passport booth</span>
+        <svg viewBox="0 0 380 52"><path d="M0 0h38v34a19 19 0 0 1 -38 0z" fill="#E2453A"/><path d="M38 0h38v34a19 19 0 0 1 -38 0z" fill="#FFFFFF"/><path d="M76 0h38v34a19 19 0 0 1 -38 0z" fill="#E2453A"/><path d="M114 0h38v34a19 19 0 0 1 -38 0z" fill="#FFFFFF"/><path d="M152 0h38v34a19 19 0 0 1 -38 0z" fill="#E2453A"/><path d="M190 0h38v34a19 19 0 0 1 -38 0z" fill="#FFFFFF"/><path d="M228 0h38v34a19 19 0 0 1 -38 0z" fill="#E2453A"/><path d="M266 0h38v34a19 19 0 0 1 -38 0z" fill="#FFFFFF"/><path d="M304 0h38v34a19 19 0 0 1 -38 0z" fill="#E2453A"/><path d="M342 0h38v34a19 19 0 0 1 -38 0z" fill="#FFFFFF"/></svg>
+      </div>
+      <div class="phone">
+        <iframe id="pp" title="EventNook Family Day digital passport, interactive demo" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1,viewport-fit=cover&quot;&gt;
+&lt;title&gt;EventNook Family Day · Digital passport&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&amp;display=swap&quot;&gt;
+&lt;style&gt;
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:&#x27;DM Sans&#x27;,system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:3px solid #00B0F0;outline-offset:3px}
+svg{display:block}
+main{position:relative;padding-bottom:120px}
+
+/* app bar */
+.top{display:flex;align-items:center;gap:12px;padding:14px 16px 13px;position:relative;z-index:5}
+.top .ic{flex:none;width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#5C86FF,#2747D8);display:grid;place-items:center;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35),0 2px 8px rgba(0,0,0,.25)}
+.top .ic svg{width:24px;height:24px}
+.top h1{font-size:18px;line-height:1.15;font-weight:700;letter-spacing:-.01em}
+.top p{font-size:13px;opacity:.82;margin-top:2px}
+.top .menu{margin-left:auto;width:26px;display:grid;gap:5px;opacity:.55;flex:none}
+.top .menu i{display:block;height:2px;border-radius:2px;background:currentColor}
+.dark{background:linear-gradient(180deg,#151C2E,#0F1524);color:#F2F4FF;box-shadow:0 1px 0 rgba(120,140,255,.3)}
+
+/* collected / not yet */
+[data-st]:not(.done) .y,[data-st].done .n{display:none!important}
+.when-complete{display:none!important}
+body.complete .when-complete{display:inline!important}
+body.complete .when-progress{display:none!important}
+
+/* tap to scan */
+#scan{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:10px;padding:0 24px 0 18px;height:54px;border-radius:999px;background:var(--btn,#1E0E62);color:var(--btn-ink,#fff);font-weight:700;font-size:16px;white-space:nowrap;box-shadow:0 12px 28px -8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.2);transition:transform .15s ease}
+#scan:active{transform:translateX(-50%) scale(.97)}
+#scan svg{width:22px;height:22px}
+
+/* scanner */
+.scanner{position:fixed;inset:0;z-index:60;background:rgba(8,10,24,.8);display:grid;place-items:center;align-content:center;gap:24px;color:#fff;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.scanner.on{opacity:1;pointer-events:auto}
+.vf{position:relative;width:190px;height:190px}
+.vf i{position:absolute;width:40px;height:40px;border:4px solid #fff}
+.vf i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-radius:16px 0 0 0}
+.vf i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 16px 0 0}
+.vf i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 16px}
+.vf i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 16px 0}
+.vf .qr{position:absolute;inset:30px;background:#fff;border-radius:6px;padding:8px}
+.vf .qr svg{width:100%;height:100%}
+.vf b{position:absolute;left:12px;right:12px;top:14px;height:3px;border-radius:3px;background:var(--scan,#6EE7FF);box-shadow:0 0 16px 2px var(--scan,#6EE7FF);animation:sweep .85s ease-in-out infinite alternate}
+@keyframes sweep{to{top:172px}}
+.scanner p{font-size:15px;opacity:.85}
+.scanner strong{display:block;font-size:21px;margin-top:4px;opacity:1}
+
+/* toast */
+.toast{position:fixed;left:50%;top:14px;z-index:70;transform:translate(-50%,-160%);padding:12px 18px;border-radius:16px;background:var(--toast,#1E0E62);color:#fff;font-weight:600;font-size:14.5px;line-height:1.35;box-shadow:0 14px 30px -10px rgba(0,0,0,.55);transition:transform .45s cubic-bezier(.2,.8,.2,1.15);width:max-content;max-width:calc(100% - 32px);text-align:center}
+.toast.on{transform:translate(-50%,0)}
+
+/* finale card */
+.fin{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:24px;background:rgba(8,10,24,.55);opacity:0;pointer-events:none;transition:opacity .35s ease}
+.fin.on{opacity:1;pointer-events:auto}
+.fin-card{width:min(100%,340px);background:#fff;color:#1A1530;border-radius:28px;padding:30px 24px 22px;text-align:center;transform:translateY(34px) scale(.94);transition:transform .55s cubic-bezier(.2,.8,.2,1.15);box-shadow:0 30px 60px -20px rgba(0,0,0,.55)}
+.fin.on .fin-card{transform:none}
+.fin-ic{font-size:42px;line-height:1;width:86px;height:86px;margin:-74px auto 14px;border-radius:50%;display:grid;place-items:center;background:var(--fin-bg,#FFE27A);box-shadow:0 0 0 7px #fff}
+.fin h2{font-size:25px;letter-spacing:-.02em;line-height:1.1}
+.fin p{font-size:15px;line-height:1.45;margin-top:8px;color:#4B4763}
+.fin .acts{display:grid;gap:8px;margin-top:20px}
+.fin .acts button{height:48px;border-radius:999px;font-weight:700;font-size:15px}
+.fin .again{background:var(--btn,#1E0E62);color:var(--btn-ink,#fff)}
+.fin .stay{background:#F1EFF7;color:#1A1530}
+
+/* confetti */
+.conf{position:fixed;inset:0;pointer-events:none;z-index:75;overflow:hidden}
+.conf i{position:absolute;top:-24px;width:9px;height:14px;border-radius:2px;animation:fall var(--d) cubic-bezier(.3,.5,.4,1) var(--dl) forwards}
+@keyframes fall{to{transform:translate3d(var(--dx),112vh,0) rotate(var(--rot))}}
+
+/* the stamp landing */
+.just.stamp,.just .stamp{animation:stampIn .75s cubic-bezier(.2,.8,.2,1.3)}
+@keyframes stampIn{0%{transform:scale(1.4) rotate(var(--r,0deg));opacity:.25}55%{transform:scale(.93) rotate(var(--r,0deg));opacity:1}100%{transform:scale(1) rotate(var(--r,0deg))}}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+:root{--btn:#E8458F;--btn-ink:#fff;--toast:#C2185B;--scan:#FFD23F;--fin-bg:#FFE27A}
+body{background:#FDEFE6;color:#2A1A22}
+.fam-top{background:linear-gradient(100deg,#F7894A 0%,#F06A6E 45%,#EA4C97 100%);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.fam-top p{opacity:.95}
+main{background:
+  radial-gradient(circle,rgba(244,150,190,.8) 3.4px,transparent 3.8px) 0 0/46px 46px,
+  radial-gradient(circle,rgba(246,192,90,.8) 3.4px,transparent 3.8px) 23px 23px/46px 46px,
+  repeating-linear-gradient(112deg,#FAD1E1 0 36px,#FDEFE6 36px 72px)}
+.bunting{display:block;width:100%;height:30px;position:relative;z-index:2}
+.hero{position:relative;padding:22px 22px 4px}
+.big{display:flex;align-items:baseline;gap:8px}
+.big b{font-size:clamp(56px,16vw,68px);line-height:.9;letter-spacing:-.05em;font-weight:800;color:#1C1218}
+.big span{font-size:32px;color:#8F7F88;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:16px;color:#5B4A53;margin-top:10px}
+.ptsbox{position:absolute;right:clamp(16px,5vw,22px);top:24px;width:clamp(86px,23vw,100px);height:68px;border:3px solid #F2C230;border-radius:16px;display:grid;place-items:center;align-content:center;background:rgba(255,248,232,.7);text-align:center}
+.ptsbox b{font-size:26px;line-height:1;font-weight:800;display:block}
+.ptsbox span{font-size:13px;color:#5B4A53}
+.bar{margin-top:20px;height:17px;border-radius:999px;background:rgba(205,185,195,.5);overflow:hidden}
+.bar i{display:block;height:100%;width:calc(var(--p) * 100%);border-radius:inherit;background:repeating-linear-gradient(120deg,#EA4C97 0 12px,#F68BBE 12px 24px);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.rules{margin-top:12px;font-size:15px;line-height:1.5;color:#4A3942}
+.grid{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(9px,3.2vw,14px);padding:22px clamp(14px,4.6vw,20px) 6px}
+.tile{position:relative;min-width:0;aspect-ratio:1;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 6px;gap:3px;background:rgba(249,241,245,.88);border:2.5px dashed #CDBFC7;color:#2A1A22;transition:background-color .45s ease,border-color .45s ease,color .45s ease}
+.tile b{font-size:clamp(12.5px,3.5vw,14.5px);line-height:1.2;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere;hyphens:auto}
+.tile small{font-size:clamp(11px,3vw,12.5px);color:#6E5F67}
+.tile .num{width:34px;height:34px;border-radius:50%;border:2.5px solid #9C8C95;display:grid;place-items:center;font-weight:800;font-size:15px;margin-bottom:5px}
+.tile .ck{width:38px;height:38px;border-radius:50%;border:2.5px solid #fff;display:grid;place-items:center;margin-bottom:5px}
+.tile .ck svg{width:20px;height:20px}
+.tile.done{background:#E8458F;border:2.5px solid #E8458F;color:#fff;transform:rotate(var(--r,0deg));box-shadow:0 6px 0 -1px rgba(170,30,95,.22),0 12px 20px -10px rgba(170,30,95,.55)}
+.tile.done small{color:rgba(255,255,255,.9)}
+.tile.free{border-color:#F5B700;box-shadow:0 0 0 4px rgba(245,183,0,.4),0 0 24px rgba(245,183,0,.55)}
+.tile .star{width:44px;height:44px;margin-bottom:4px}
+.tile.hit::after{content:&quot;&quot;;position:absolute;inset:-7px;border-radius:21px;border:3px solid #FFC81E;box-shadow:0 0 24px #FFC81E;animation:ring 1.8s ease forwards;pointer-events:none}
+@keyframes ring{0%{opacity:0;transform:scale(.92)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.02)}}
+.fair{display:block;width:100%;height:auto;margin-top:18px}
+.wheel{transform-origin:120px 128px;animation:spin 40s linear infinite}
+.finale .wheel{animation-duration:5s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bal{animation:bob 3.4s ease-in-out infinite alternate}
+.finale .bal{animation:away 3.2s cubic-bezier(.5,0,.7,.4) forwards}
+@keyframes bob{to{transform:translateY(-6px)}}
+@keyframes away{to{transform:translateY(-900px)}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header class=&quot;top fam-top&quot;&gt;
+  &lt;div class=&quot;ic&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#fff&quot; stroke-width=&quot;2.6&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M6.5 18V6.5l11 11V6&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;
+  &lt;div&gt;&lt;h1&gt;EventNook Family Day&lt;/h1&gt;&lt;p&gt;&lt;span data-count&gt;5&lt;/span&gt; of &lt;span data-total&gt;9&lt;/span&gt; collected&lt;/p&gt;&lt;/div&gt;
+  &lt;div class=&quot;menu&quot; aria-hidden=&quot;true&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+&lt;/header&gt;
+&lt;main&gt;
+  &lt;svg class=&quot;bunting&quot; viewBox=&quot;0 0 430 30&quot; preserveAspectRatio=&quot;none&quot; aria-hidden=&quot;true&quot; id=&quot;bunting&quot;&gt;&lt;/svg&gt;
+  &lt;section class=&quot;hero&quot;&gt;
+    &lt;div class=&quot;big&quot;&gt;&lt;b data-count&gt;5&lt;/b&gt;&lt;span&gt;/ &lt;span data-total&gt;9&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;p class=&quot;sub&quot;&gt;&lt;span class=&quot;when-progress&quot;&gt;Collected · &lt;span data-left&gt;4&lt;/span&gt; to go&lt;/span&gt;&lt;span class=&quot;when-complete&quot;&gt;All collected. Grand prize draw unlocked!&lt;/span&gt;&lt;/p&gt;
+    &lt;div class=&quot;ptsbox&quot;&gt;&lt;b data-pts&gt;4&lt;/b&gt;&lt;span&gt;of 8 pts&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;bar&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+    &lt;p class=&quot;rules&quot;&gt;Collect 3 in a row to win a mini prize. Collect all 8 to stand a chance to win the grand prize.&lt;/p&gt;
+  &lt;/section&gt;
+  &lt;section class=&quot;grid&quot; id=&quot;grid&quot; aria-label=&quot;Activities&quot;&gt;&lt;/section&gt;
+  &lt;svg class=&quot;fair&quot; viewBox=&quot;0 0 430 260&quot; aria-hidden=&quot;true&quot;&gt;
+    &lt;g stroke=&quot;#7A6470&quot; stroke-width=&quot;3&quot; stroke-linecap=&quot;round&quot;&gt;&lt;path d=&quot;M120 128 86 246M120 128l34 118&quot;/&gt;&lt;/g&gt;
+    &lt;g class=&quot;wheel&quot;&gt;
+      &lt;circle cx=&quot;120&quot; cy=&quot;128&quot; r=&quot;64&quot; fill=&quot;none&quot; stroke=&quot;#E8458F&quot; stroke-width=&quot;4&quot;/&gt;
+      &lt;g stroke=&quot;#F29BC0&quot; stroke-width=&quot;2&quot; id=&quot;spokes&quot;&gt;&lt;/g&gt;
+      &lt;g id=&quot;pods&quot;&gt;&lt;/g&gt;
+      &lt;circle cx=&quot;120&quot; cy=&quot;128&quot; r=&quot;8&quot; fill=&quot;#E8458F&quot;/&gt;
+    &lt;/g&gt;
+    &lt;g&gt;
+      &lt;path d=&quot;M232 178 282 116l50 62z&quot; fill=&quot;#E2453A&quot;/&gt;
+      &lt;path d=&quot;M282 116l-14 62h12zM282 116l14 62h-12z&quot; fill=&quot;#fff&quot;/&gt;
+      &lt;rect x=&quot;240&quot; y=&quot;176&quot; width=&quot;84&quot; height=&quot;70&quot; fill=&quot;#fff&quot;/&gt;
+      &lt;g fill=&quot;#E2453A&quot;&gt;&lt;rect x=&quot;240&quot; y=&quot;176&quot; width=&quot;14&quot; height=&quot;70&quot;/&gt;&lt;rect x=&quot;268&quot; y=&quot;176&quot; width=&quot;14&quot; height=&quot;70&quot;/&gt;&lt;rect x=&quot;296&quot; y=&quot;176&quot; width=&quot;14&quot; height=&quot;70&quot;/&gt;&lt;/g&gt;
+      &lt;rect x=&quot;236&quot; y=&quot;172&quot; width=&quot;92&quot; height=&quot;9&quot; rx=&quot;2&quot; fill=&quot;#F5B700&quot;/&gt;
+      &lt;path d=&quot;M268 246v-28a14 14 0 0 1 28 0v28z&quot; fill=&quot;#8C3A55&quot;/&gt;
+      &lt;path d=&quot;M282 116V92&quot; stroke=&quot;#7A6470&quot; stroke-width=&quot;2.5&quot;/&gt;&lt;path d=&quot;M282 92l18 6-18 6z&quot; fill=&quot;#F5B700&quot;/&gt;
+    &lt;/g&gt;
+    &lt;g class=&quot;bal&quot;&gt;&lt;path d=&quot;M352 96l18 54M372 82l-2 68M392 100l-22 50&quot; stroke=&quot;#7A6470&quot; stroke-width=&quot;1.5&quot; fill=&quot;none&quot;/&gt;
+      &lt;ellipse cx=&quot;350&quot; cy=&quot;80&quot; rx=&quot;17&quot; ry=&quot;20&quot; fill=&quot;#E2453A&quot;/&gt;&lt;ellipse cx=&quot;373&quot; cy=&quot;64&quot; rx=&quot;17&quot; ry=&quot;20&quot; fill=&quot;#E8458F&quot;/&gt;&lt;ellipse cx=&quot;394&quot; cy=&quot;86&quot; rx=&quot;16&quot; ry=&quot;19&quot; fill=&quot;#F5B700&quot;/&gt;&lt;/g&gt;
+    &lt;path d=&quot;M344 182l26-30 26 30z&quot; fill=&quot;#EA4C97&quot;/&gt;&lt;rect x=&quot;350&quot; y=&quot;182&quot; width=&quot;40&quot; height=&quot;64&quot; fill=&quot;#F5B700&quot;/&gt;&lt;path d=&quot;M362 246v-18a8 8 0 0 1 16 0v18z&quot; fill=&quot;#8C5A3A&quot;/&gt;
+    &lt;path d=&quot;M40 247H400&quot; stroke=&quot;#9C8C95&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;5 6&quot;/&gt;
+  &lt;/svg&gt;
+&lt;/main&gt;
+&lt;script&gt;
+window.PP = {
+  stations: [
+    { name: &#x27;Mini Bowling&#x27;, done: true }, { name: &#x27;Family Photo Challenge&#x27; }, { name: &#x27;Treasure Hunt&#x27;, done: true },
+    { name: &#x27;Family Trivia&#x27;, done: true }, { name: &#x27;Free pass&#x27;, done: true, auto: true }, { name: &#x27;Balloon Sculpting&#x27; },
+    { name: &#x27;Face Painting&#x27; }, { name: &#x27;Lucky Fishing&#x27; }, { name: &#x27;Pop the Balloon&#x27;, done: true }
+  ],
+  finIcon: &#x27;🏆&#x27;, finTitle: &#x27;All 8 collected!&#x27;,
+  finText: &quot;You&#x27;re in the grand prize draw, with a mini prize for every three in a row.&quot;,
+  confetti: [&#x27;#E8458F&#x27;, &#x27;#F5B700&#x27;, &#x27;#E2453A&#x27;, &#x27;#F7894A&#x27;, &#x27;#FFFFFF&#x27;],
+  render(n, T, S) { document.querySelector(&#x27;[data-pts]&#x27;).textContent = S.filter(s =&gt; s.done &amp;&amp; !s.auto).length; },
+  onCollect(i) {
+    const S = this.stations, L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    const won = L.filter(l =&gt; l.includes(i) &amp;&amp; l.every(k =&gt; S[k].done));
+    if (!won.length) return `${S[i].name} collected · +1 pt`;
+    setTimeout(() =&gt; won.flat().forEach(k =&gt; { const t = document.querySelector(`[data-st=&quot;${k}&quot;]`); t.classList.remove(&#x27;hit&#x27;); void t.offsetWidth; t.classList.add(&#x27;hit&#x27;); }), 450);
+    return won.length &gt; 1 ? `${won.length} lines of three! Mini prizes unlocked 🎁` : &#x27;Three in a row! Mini prize unlocked 🎁&#x27;;
+  }
+};
+(function () {
+  const rot = [-2.5, 0, 2, 1.5, 0, -1.5, 2, -2, 1.8];
+  const check = &#x27;&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#fff&quot; stroke-width=&quot;3&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M5 12.5l4.5 4.5L19 7.5&quot;/&gt;&lt;/svg&gt;&#x27;;
+  document.getElementById(&#x27;grid&#x27;).innerHTML = PP.stations.map((s, i) =&gt; s.auto
+    ? `&lt;div class=&quot;tile stamp free&quot; data-st=&quot;${i}&quot; style=&quot;--r:${rot[i]}deg&quot;&gt;&lt;svg class=&quot;star&quot; viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M12 2.5l2.9 6.2 6.6.7-5 4.5 1.4 6.6L12 17.2l-5.9 3.3 1.4-6.6-5-4.5 6.6-.7z&quot; fill=&quot;#F5B700&quot;/&gt;&lt;/svg&gt;&lt;b&gt;Free pass&lt;/b&gt;&lt;small&gt;Collected&lt;/small&gt;&lt;/div&gt;`
+    : `&lt;div class=&quot;tile stamp&quot; data-st=&quot;${i}&quot; style=&quot;--r:${rot[i]}deg&quot;&gt;&lt;span class=&quot;ck y&quot;&gt;${check}&lt;/span&gt;&lt;span class=&quot;num n&quot;&gt;${i + 1}&lt;/span&gt;&lt;b&gt;${s.name}&lt;/b&gt;&lt;small&gt;&lt;span class=&quot;y&quot;&gt;Collected · 1 pt&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Not yet&lt;/span&gt;&lt;/small&gt;&lt;/div&gt;`).join(&#x27;&#x27;);
+  const cols = [&#x27;#E8458F&#x27;, &#x27;#F5B700&#x27;, &#x27;#E2453A&#x27;];
+  document.getElementById(&#x27;bunting&#x27;).innerHTML = Array.from({ length: 12 }, (_, k) =&gt; `&lt;path d=&quot;M${k * 36} 0h36l-18 28z&quot; fill=&quot;${cols[k % 3]}&quot;/&gt;`).join(&#x27;&#x27;);
+  let sp = &#x27;&#x27;, pd = &#x27;&#x27;;
+  for (let k = 0; k &lt; 8; k++) {
+    const a = k * Math.PI / 4, x = 120 + 64 * Math.cos(a), y = 128 + 64 * Math.sin(a);
+    sp += `&lt;path d=&quot;M120 128L${x.toFixed(1)} ${y.toFixed(1)}&quot;/&gt;`;
+    pd += `&lt;circle cx=&quot;${x.toFixed(1)}&quot; cy=&quot;${y.toFixed(1)}&quot; r=&quot;8.5&quot; fill=&quot;${[&#x27;#F5B700&#x27;, &#x27;#E2453A&#x27;, &#x27;#E8458F&#x27;][k % 3]}&quot;/&gt;`;
+  }
+  document.getElementById(&#x27;spokes&#x27;).innerHTML = sp; document.getElementById(&#x27;pods&#x27;).innerHTML = pd;
+})();
+&lt;/script&gt;
+&lt;script&gt;
+/* Demo passport engine: Tap to scan collects the next station, then the theme&#x27;s finale plays.
+   The page defines window.PP = {stations:[{name, done, time, auto}], finTitle, finText, finIcon, confetti,
+   render(n, T, S), onCollect(i) -&gt; toast text, finale(), reset()} and marks station elements with data-st. */
+(function () {
+  const PP = window.PP, S = PP.stations, INIT = S.map(s =&gt; ({ ...s }));
+  const $ = (q, r = document) =&gt; r.querySelector(q), $$ = (q, r = document) =&gt; [...r.querySelectorAll(q)];
+  const reduce = matchMedia(&#x27;(prefers-reduced-motion: reduce)&#x27;).matches;
+
+  // a small QR for the scanner
+  let qr = &#x27;&#x27;;
+  (function () {
+    let seed = 7; const rnd = () =&gt; (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    const finder = (x, y) =&gt; `&lt;rect x=&quot;${x}&quot; y=&quot;${y}&quot; width=&quot;7&quot; height=&quot;7&quot; fill=&quot;#111&quot;/&gt;&lt;rect x=&quot;${x + 1}&quot; y=&quot;${y + 1}&quot; width=&quot;5&quot; height=&quot;5&quot; fill=&quot;#fff&quot;/&gt;&lt;rect x=&quot;${x + 2}&quot; y=&quot;${y + 2}&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#111&quot;/&gt;`;
+    for (let y = 0; y &lt; 25; y++) for (let x = 0; x &lt; 25; x++) {
+      if ((x &lt; 8 &amp;&amp; y &lt; 8) || (x &gt; 16 &amp;&amp; y &lt; 8) || (x &lt; 8 &amp;&amp; y &gt; 16)) continue;
+      if (rnd() &gt; .52) qr += `&lt;rect x=&quot;${x}&quot; y=&quot;${y}&quot; width=&quot;1&quot; height=&quot;1&quot; fill=&quot;#111&quot;/&gt;`;
+    }
+    qr = `&lt;svg viewBox=&quot;0 0 25 25&quot; shape-rendering=&quot;crispEdges&quot;&gt;${qr}${finder(0, 0)}${finder(18, 0)}${finder(0, 18)}&lt;/svg&gt;`;
+  })();
+
+  document.body.insertAdjacentHTML(&#x27;beforeend&#x27;, `
+&lt;button id=&quot;scan&quot; type=&quot;button&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16&quot;/&gt;&lt;path d=&quot;M7 12h10&quot;/&gt;&lt;/svg&gt;&lt;span&gt;Tap to scan&lt;/span&gt;&lt;/button&gt;
+&lt;div class=&quot;scanner&quot; aria-hidden=&quot;true&quot;&gt;&lt;div class=&quot;vf&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;div class=&quot;qr&quot;&gt;${qr}&lt;/div&gt;&lt;b&gt;&lt;/b&gt;&lt;/div&gt;&lt;p&gt;Scanning in at&lt;strong&gt;&lt;/strong&gt;&lt;/p&gt;&lt;/div&gt;
+&lt;div class=&quot;toast&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;fin&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-labelledby=&quot;fin-t&quot;&gt;&lt;div class=&quot;fin-card&quot;&gt;&lt;div class=&quot;fin-ic&quot; aria-hidden=&quot;true&quot;&gt;${PP.finIcon || &#x27;🎉&#x27;}&lt;/div&gt;&lt;h2 id=&quot;fin-t&quot;&gt;${PP.finTitle}&lt;/h2&gt;&lt;p&gt;${PP.finText}&lt;/p&gt;&lt;div class=&quot;acts&quot;&gt;&lt;button class=&quot;again&quot; type=&quot;button&quot;&gt;Start over&lt;/button&gt;&lt;button class=&quot;stay&quot; type=&quot;button&quot;&gt;Keep looking&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;`);
+
+  const btn = $(&#x27;#scan&#x27;), scanner = $(&#x27;.scanner&#x27;), toastEl = $(&#x27;.toast&#x27;), fin = $(&#x27;.fin&#x27;);
+  const counts = () =&gt; ({ n: S.filter(s =&gt; s.done).length, T: S.length });
+
+  function render() {
+    const { n, T } = counts();
+    $$(&#x27;[data-count]&#x27;).forEach(e =&gt; e.textContent = n);
+    $$(&#x27;[data-total]&#x27;).forEach(e =&gt; e.textContent = T);
+    $$(&#x27;[data-left]&#x27;).forEach(e =&gt; e.textContent = T - n);
+    $$(&#x27;[data-pct]&#x27;).forEach(e =&gt; e.textContent = Math.round(n / T * 100) + &#x27;%&#x27;);
+    document.documentElement.style.setProperty(&#x27;--p&#x27;, (n / T).toFixed(4));
+    S.forEach((s, i) =&gt; $$(`[data-st=&quot;${i}&quot;]`).forEach(el =&gt; {
+      el.classList.toggle(&#x27;done&#x27;, !!s.done);
+      $$(&#x27;[data-time]&#x27;, el).forEach(t =&gt; t.textContent = s.time || &#x27;Just now&#x27;);
+    }));
+    btn.querySelector(&#x27;span&#x27;).textContent = n === T ? &#x27;Start over&#x27; : &#x27;Tap to scan&#x27;;
+    document.body.classList.toggle(&#x27;complete&#x27;, n === T);
+    if (PP.render) PP.render(n, T, S);
+  }
+
+  let tt;
+  function toast(msg) { toastEl.textContent = msg; toastEl.classList.add(&#x27;on&#x27;); clearTimeout(tt); tt = setTimeout(() =&gt; toastEl.classList.remove(&#x27;on&#x27;), 2600); }
+
+  const next = () =&gt; S.findIndex(s =&gt; !s.done &amp;&amp; !s.auto);
+  let busy = false;
+
+  function scan() {
+    if (busy) return;
+    const { n, T } = counts();
+    if (n === T) { reset(); return; }
+    const i = next(); if (i &lt; 0) return;
+    busy = true;
+    $(&#x27;strong&#x27;, scanner).textContent = S[i].name;
+    scanner.classList.add(&#x27;on&#x27;);
+    setTimeout(() =&gt; {
+      scanner.classList.remove(&#x27;on&#x27;);
+      const el = $(`[data-st=&quot;${i}&quot;]`);
+      if (el) el.scrollIntoView({ block: &#x27;center&#x27;, behavior: reduce ? &#x27;auto&#x27; : &#x27;smooth&#x27; });
+      setTimeout(() =&gt; collect(i), reduce ? 60 : 560);
+    }, reduce ? 300 : 1150);
+  }
+
+  function collect(i) {
+    S[i].done = true; S[i].time = &#x27;Just now&#x27;;
+    render();
+    $$(`[data-st=&quot;${i}&quot;]`).forEach(el =&gt; { el.classList.remove(&#x27;just&#x27;); void el.offsetWidth; el.classList.add(&#x27;just&#x27;); setTimeout(() =&gt; el.classList.remove(&#x27;just&#x27;), 1500); });
+    toast((PP.onCollect &amp;&amp; PP.onCollect(i)) || `${S[i].name} collected · +1 pt`);
+    const { n, T } = counts();
+    if (n &lt; T) { busy = false; return; }
+    setTimeout(() =&gt; {
+      document.body.classList.add(&#x27;finale&#x27;);
+      if (PP.finale) PP.finale();
+      confetti();
+      setTimeout(() =&gt; { fin.classList.add(&#x27;on&#x27;); $(&#x27;.again&#x27;, fin).focus({ preventScroll: true }); busy = false; }, PP.finDelay || 1500);
+    }, 800);
+  }
+
+  function confetti() {
+    if (reduce) return;
+    const c = document.createElement(&#x27;div&#x27;); c.className = &#x27;conf&#x27;;
+    const cols = PP.confetti || [&#x27;#FF5C8A&#x27;, &#x27;#FFC93C&#x27;, &#x27;#5B8CFF&#x27;, &#x27;#3DD6A3&#x27;];
+    for (let k = 0; k &lt; 70; k++) {
+      const i = document.createElement(&#x27;i&#x27;);
+      i.style.cssText = `left:${Math.random() * 100}%;background:${cols[k % cols.length]};--d:${2.3 + Math.random() * 1.8}s;--dl:${Math.random() * .7}s;--dx:${(Math.random() - .5) * 170}px;--rot:${(Math.random() - .5) * 900}deg;${PP.confettiShape || &#x27;&#x27;}`;
+      c.appendChild(i);
+    }
+    document.body.appendChild(c); setTimeout(() =&gt; c.remove(), 5400);
+  }
+
+  function reset() {
+    fin.classList.remove(&#x27;on&#x27;); document.body.classList.remove(&#x27;finale&#x27;);
+    S.forEach((s, i) =&gt; { Object.assign(s, INIT[i]); if (!INIT[i].time) delete s.time; });
+    if (PP.reset) PP.reset();
+    render();
+    scrollTo({ top: 0, behavior: reduce ? &#x27;auto&#x27; : &#x27;smooth&#x27; });
+  }
+
+  btn.addEventListener(&#x27;click&#x27;, scan);
+  $(&#x27;.again&#x27;, fin).addEventListener(&#x27;click&#x27;, reset);
+  $(&#x27;.stay&#x27;, fin).addEventListener(&#x27;click&#x27;, () =&gt; fin.classList.remove(&#x27;on&#x27;));
+  addEventListener(&#x27;keydown&#x27;, e =&gt; { if (e.key === &#x27;Escape&#x27;) fin.classList.remove(&#x27;on&#x27;); });
+  render();
+})();
+
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+      </div>
+      <p class="booth-cap">This is the demo passport. Press <b>Tap to scan</b> inside it to collect the next stop.</p>
+      <button class="btn btn-primary" type="button" data-open><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Try it full screen</button>
+    </div>
+
+    <div>
+      <div class="sec-head">
+        <span class="kicker">How the passport works</span>
+        <h2>Your passport lives on your phone</h2>
+        <p class="lead">Every family gets a digital passport with their booking. It opens in the browser, so there is nothing to download.</p>
+      </div>
+      <ol class="tickets">
+        <li class="ticket"><span class="stub">01</span><div class="body"><h3>Open your passport</h3><p class="txt">Tap the link in your confirmation email. You will see the board, your stamps and your points so far.</p></div></li>
+        <li class="ticket"><span class="stub">02</span><div class="body"><h3>Play a stop, get scanned</h3><p class="txt">Bowl, fish, paint or hunt. When you finish, the stop crew scans your passport QR.</p></div></li>
+        <li class="ticket"><span class="stub">03</span><div class="body"><h3>Watch the stamp land</h3><p class="txt">The square turns pink and your points go up by one. Each stop stamps once.</p></div></li>
+        <li class="ticket"><span class="stub">04</span><div class="body"><h3>Make lines, fill the board</h3><p class="txt">Three in a row unlocks a mini prize. All eight stops enter you in the grand prize draw.</p></div></li>
+      </ol>
+      <div class="how-note">
+        <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M7 12h10"/></svg>Tap to scan</span>
+        <span>In the demo, this button plays the part of the stop crew. Keep tapping to fill the board and see the finale.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section id="board" class="board-sec">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="kicker">The nine stops</span>
+      <h2>Eight stops and a free square</h2>
+      <p class="lead">The board in your passport is the map of the day. Every stop is worth 1 point, and you can play them in any order.</p>
+    </div>
+    <ol class="board">
+      <li class="stop" style="--r:-1.2deg"><div class="top"><span class="num">1</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="30" r="10"/><circle cx="13" cy="27" r="1.4" fill="currentColor"/><circle cx="18" cy="26" r="1.4" fill="currentColor"/><path d="M34 8c-2 0-3 2-3 4 0 3 2 4 2 7s-3 6-3 11 2 10 4 10 4-5 4-10-3-8-3-11 2-4 2-7c0-2-1-4-3-4z"/><path d="M31 18h6"/></svg></div><h3>Mini Bowling</h3><p class="txt">Six soft pins and a short lane. Little ones can bowl from the front line.</p><div class="foot"><span class="chip">1 pt</span>Part of 3 lines</div></li>
+      <li class="stop" style="--r:.8deg"><div class="top"><span class="num">2</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h8l3-5h14l3 5h8v22H6z"/><circle cx="24" cy="26" r="7"/><path d="M36 21h2"/></svg></div><h3>Family Photo Challenge</h3><p class="txt">Copy the pose on your challenge card as a team, then show the crew your photo.</p><div class="foot"><span class="chip">1 pt</span>Part of 2 lines</div></li>
+      <li class="stop" style="--r:1.4deg"><div class="top"><span class="num">3</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20h32v18H8z"/><path d="M8 20c0-6 4-10 16-10s16 4 16 10"/><path d="M8 26h32"/><rect x="21" y="23" width="6" height="7" rx="1.5"/></svg></div><h3>Treasure Hunt</h3><p class="txt">Follow the clue map around the grounds and find the hidden chest together.</p><div class="foot"><span class="chip">1 pt</span>Part of 3 lines</div></li>
+      <li class="stop" style="--r:1deg"><div class="top"><span class="num">4</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10h32v22H22l-8 7v-7H8z"/><path d="M20 17a4 4 0 1 1 5 4c-1 .4-1 1-1 2.5"/><circle cx="24" cy="27" r=".6" fill="currentColor"/></svg></div><h3>Family Trivia</h3><p class="txt">Quick-fire questions that grown-ups and kids answer as one team.</p><div class="foot"><span class="chip">1 pt</span>Part of 2 lines</div></li>
+      <li class="stop free"><div class="top"><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.6.7-5 4.5 1.4 6.6L12 17.2l-5.9 3.3 1.4-6.6-5-4.5 6.6-.7z" fill="#F5B700"/></svg></div><h3>Free pass</h3><p class="txt">Already stamped when you open your passport. It sits in the middle, so it helps four different lines.</p><div class="foot"><span class="chip">Free</span>Part of 4 lines</div></li>
+      <li class="stop" style="--r:-1deg"><div class="top"><span class="num">6</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="17" cy="16" rx="7" ry="9"/><ellipse cx="31" cy="16" rx="7" ry="9"/><ellipse cx="24" cy="30" rx="6" ry="7"/><path d="M24 37v6"/></svg></div><h3>Balloon Sculpting</h3><p class="txt">Watch a dog, a sword or a flower appear, then have a go at twisting one yourself.</p><div class="foot"><span class="chip">1 pt</span>Part of 2 lines</div></li>
+      <li class="stop" style="--r:1.6deg"><div class="top"><span class="num">7</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M30 6l8 8-14 14-8-8z"/><path d="M16 20l-6 6c-3 3-3 9 1 12 3 3 8 2 10-1l5-5"/><path d="M12 32l4 4"/></svg></div><h3>Face Painting</h3><p class="txt">Pick a design from the board: tiger, butterfly, superhero and more.</p><div class="foot"><span class="chip">1 pt</span>Part of 3 lines</div></li>
+      <li class="stop" style="--r:-.8deg"><div class="top"><span class="num">8</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6l20 10"/><path d="M28 16v10"/><path d="M14 36c0-5 4-8 9-8 4 0 6 2 9 2 3 0 4-2 6-2v6c-2 0-3 4-8 4H18c-2 0-4-1-4-2z"/><circle cx="20" cy="33" r=".8" fill="currentColor"/><path d="M6 42h36"/></svg></div><h3>Lucky Fishing</h3><p class="txt">Hook a floating duck with a magnet rod and see which number it carries.</p><div class="foot"><span class="chip">1 pt</span>Part of 2 lines</div></li>
+      <li class="stop" style="--r:1.1deg"><div class="top"><span class="num">9</span><svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="22" cy="18" rx="10" ry="12"/><path d="M22 30l-2 3h4z"/><path d="M22 33c0 4 3 5 3 9"/><path d="M34 6l3 4M40 14l-4 1M38 22l-3-2"/></svg></div><h3>Pop the Balloon</h3><p class="txt">A wall of balloons and a few darts. Pop one to earn your stamp.</p><div class="foot"><span class="chip">1 pt</span>Part of 3 lines</div></li>
+    </ol>
+    <div class="board-key"><span><i></i>Play stop · 1 pt</span><span><i class="f"></i>Free pass · stamped for you</span><span>8 pts fills the board</span></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section id="prizes">
+    <div class="sec-head">
+      <span class="kicker">Prizes</span>
+      <h2>Make lines, win prizes</h2>
+      <p class="lead">Two ways to win, and they stack. Every line you finish is its own mini prize, and a full board still counts for the draw.</p>
+    </div>
+    <div class="prizes">
+      <div class="card p-lines">
+        <div>
+          <span class="tag">Mini prize</span>
+          <h3>Three in a row</h3>
+          <p class="txt">Finish any line of three on your board to unlock a mini prize. There are eight lines to make.</p>
+          <ul class="lines-list">
+            <li><b>3</b><span>rows across</span></li>
+            <li><b>3</b><span>columns down</span></li>
+            <li><b>2</b><span>diagonals, both through the free pass</span></li>
+          </ul>
+        </div>
+        <div class="mini-wrap">
+          <div class="mini" role="group" aria-label="Practice board: tap squares to stamp them">
+            <button class="mt" type="button" aria-pressed="false" data-i="0" aria-label="Mini Bowling">1</button>
+            <button class="mt" type="button" aria-pressed="false" data-i="1" aria-label="Family Photo Challenge">2</button>
+            <button class="mt" type="button" aria-pressed="false" data-i="2" aria-label="Treasure Hunt">3</button>
+            <button class="mt" type="button" aria-pressed="false" data-i="3" aria-label="Family Trivia">4</button>
+            <button class="mt free" type="button" aria-pressed="true" aria-disabled="true" data-i="4" aria-label="Free pass, always stamped"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.6.7-5 4.5 1.4 6.6L12 17.2l-5.9 3.3 1.4-6.6-5-4.5 6.6-.7z" fill="#F5B700"/></svg></button>
+            <button class="mt" type="button" aria-pressed="false" data-i="5" aria-label="Balloon Sculpting">6</button>
+            <button class="mt" type="button" aria-pressed="false" data-i="6" aria-label="Face Painting">7</button>
+            <button class="mt" type="button" aria-pressed="false" data-i="7" aria-label="Lucky Fishing">8</button>
+            <button class="mt" type="button" aria-pressed="false" data-i="8" aria-label="Pop the Balloon">9</button>
+          </div>
+          <p class="mini-read" role="status" aria-live="polite">Tap two squares in a line with the star.</p>
+          <button class="mini-reset" type="button">Clear the practice board</button>
+        </div>
+        <div class="pts">
+          <div class="bar" role="img" aria-label="Points on the practice board"><i id="bar-fill" style="width:0%"></i></div>
+          <div class="bar-row"><span id="bar-pts">0 of 8 pts</span><span>8 pts fills the board</span></div>
+        </div>
+      </div>
+
+      <div class="card p-grand">
+        <div class="cup" aria-hidden="true">🏆</div>
+        <span class="tag">Grand prize</span>
+        <h3>Fill the whole board</h3>
+        <p class="txt">Collect all eight stops and your passport shows “All 8 collected!” Your family is in the grand prize draw, with a mini prize for every three in a row along the way.</p>
+        <div class="full" aria-hidden="true"><i style="--r:-3deg"></i><i style="--r:1deg"></i><i style="--r:2deg"></i><i style="--r:2deg"></i><i class="s"></i><i style="--r:-2deg"></i><i style="--r:1deg"></i><i style="--r:-2deg"></i><i style="--r:2deg"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="sec-head">
+      <span class="kicker">Good to know</span>
+      <h2>Questions from families</h2>
+    </div>
+    <div class="faq">
+      <details class="qa"><summary>Do we need to download an app?</summary><p class="ans">No. The passport opens in your phone's browser from the link in your confirmation email.</p></details>
+      <details class="qa"><summary>Can the whole family share one passport?</summary><p class="ans">Yes. Each booking comes with a passport, and families play the stops together on one phone.</p></details>
+      <details class="qa"><summary>Do we have to go in order?</summary><p class="ans">No. Play the stops in any order. The numbers only show where each stop sits on the board.</p></details>
+      <details class="qa"><summary>What is the free pass?</summary><p class="ans">The centre square. It is stamped from the start, so the middle row, the middle column and both diagonals each need just two more stops.</p></details>
+      <details class="qa"><summary>Can we play a stop twice?</summary><p class="ans">Play as often as you like. The stamp and its point are counted once per passport.</p></details>
+      <details class="qa"><summary>Where do we collect prizes?</summary><p class="ans">Show your passport at the prize booth. Mini prizes are ready as soon as a line is done, and full boards go into the grand prize draw.</p></details>
+    </div>
+  </section>
+
+  <div class="closing">
+    <div class="bunting" aria-hidden="true"><svg viewBox="0 0 1440 28" preserveAspectRatio="xMidYMin slice"><g><path d="M0 0h36l-18 28z" fill="#E8458F"/><path d="M36 0h36l-18 28z" fill="#F5B700"/><path d="M72 0h36l-18 28z" fill="#E2453A"/><path d="M108 0h36l-18 28z" fill="#E8458F"/><path d="M144 0h36l-18 28z" fill="#F5B700"/><path d="M180 0h36l-18 28z" fill="#E2453A"/><path d="M216 0h36l-18 28z" fill="#E8458F"/><path d="M252 0h36l-18 28z" fill="#F5B700"/><path d="M288 0h36l-18 28z" fill="#E2453A"/><path d="M324 0h36l-18 28z" fill="#E8458F"/><path d="M360 0h36l-18 28z" fill="#F5B700"/><path d="M396 0h36l-18 28z" fill="#E2453A"/><path d="M432 0h36l-18 28z" fill="#E8458F"/><path d="M468 0h36l-18 28z" fill="#F5B700"/><path d="M504 0h36l-18 28z" fill="#E2453A"/><path d="M540 0h36l-18 28z" fill="#E8458F"/><path d="M576 0h36l-18 28z" fill="#F5B700"/><path d="M612 0h36l-18 28z" fill="#E2453A"/><path d="M648 0h36l-18 28z" fill="#E8458F"/><path d="M684 0h36l-18 28z" fill="#F5B700"/><path d="M720 0h36l-18 28z" fill="#E2453A"/><path d="M756 0h36l-18 28z" fill="#E8458F"/><path d="M792 0h36l-18 28z" fill="#F5B700"/><path d="M828 0h36l-18 28z" fill="#E2453A"/><path d="M864 0h36l-18 28z" fill="#E8458F"/><path d="M900 0h36l-18 28z" fill="#F5B700"/><path d="M936 0h36l-18 28z" fill="#E2453A"/><path d="M972 0h36l-18 28z" fill="#E8458F"/><path d="M1008 0h36l-18 28z" fill="#F5B700"/><path d="M1044 0h36l-18 28z" fill="#E2453A"/><path d="M1080 0h36l-18 28z" fill="#E8458F"/><path d="M1116 0h36l-18 28z" fill="#F5B700"/><path d="M1152 0h36l-18 28z" fill="#E2453A"/><path d="M1188 0h36l-18 28z" fill="#E8458F"/><path d="M1224 0h36l-18 28z" fill="#F5B700"/><path d="M1260 0h36l-18 28z" fill="#E2453A"/><path d="M1296 0h36l-18 28z" fill="#E8458F"/><path d="M1332 0h36l-18 28z" fill="#F5B700"/><path d="M1368 0h36l-18 28z" fill="#E2453A"/><path d="M1404 0h36l-18 28z" fill="#E8458F"/></g></svg></div>
+    <div>
+      <h2>Ready to fill the board?</h2>
+      <p class="txt">Open the demo passport, tap to scan your way round all nine squares and watch the finale.</p>
+      <div class="cta-row">
+        <button class="btn btn-white" type="button" data-open>Try the passport</button>
+        <a class="btn btn-line" href="#board">See the nine stops</a>
+      </div>
+    </div>
+    <svg class="art" viewBox="0 0 300 250" aria-hidden="true">
+      <g stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".9"><path d="M110 120 70 244M110 120l40 124"/></g>
+      <g class="wheel">
+        <circle cx="110" cy="120" r="84" fill="none" stroke="#fff" stroke-width="4.5"/>
+        <g stroke="rgba(255,255,255,.7)" stroke-width="2"><path d="M110 120L194.0 120.0"/><path d="M110 120L169.4 179.4"/><path d="M110 120L110.0 204.0"/><path d="M110 120L50.6 179.4"/><path d="M110 120L26.0 120.0"/><path d="M110 120L50.6 60.6"/><path d="M110 120L110.0 36.0"/><path d="M110 120L169.4 60.6"/></g>
+        <g><circle cx="194.0" cy="120.0" r="10" fill="#F5B700"/><circle cx="169.4" cy="179.4" r="10" fill="#E2453A"/><circle cx="110.0" cy="204.0" r="10" fill="#E8458F"/><circle cx="50.6" cy="179.4" r="10" fill="#F5B700"/><circle cx="26.0" cy="120.0" r="10" fill="#E2453A"/><circle cx="50.6" cy="60.6" r="10" fill="#E8458F"/><circle cx="110.0" cy="36.0" r="10" fill="#F5B700"/><circle cx="169.4" cy="60.6" r="10" fill="#E2453A"/></g>
+        <circle cx="110" cy="120" r="9" fill="#fff"/>
+      </g>
+      <g class="bal">
+        <path d="M232 106l14 60M256 88l-10 78M278 112l-32 54" stroke="#fff" stroke-width="1.5" fill="none"/>
+        <ellipse cx="230" cy="88" rx="18" ry="22" fill="#F5B700"/><ellipse cx="256" cy="68" rx="18" ry="22" fill="#fff"/><ellipse cx="280" cy="94" rx="16" ry="20" fill="#E2453A"/>
+      </g>
+      <path d="M10 245H290" stroke="#fff" stroke-width="2" stroke-dasharray="5 6" opacity=".8"/>
+    </svg>
+  </div>
+</div>
+</main>
+
+<footer class="wrap site-foot"><span>EventNook Family Day · a sample event for showcase</span><span>Powered by <b>eventnook</b></span></footer>
+
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-label="EventNook Family Day passport, full screen" hidden>
+  <div class="ov-frame">
+    <button class="ov-close" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>Close</button>
+    <iframe id="ov-pp" title="EventNook Family Day digital passport, full screen"></iframe>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Full-screen passport: reuses the phone frame's srcdoc.
+  var ov = document.getElementById('ov'), frame = document.getElementById('ov-pp'), src = document.getElementById('pp');
+  var closeBtn = ov.querySelector('.ov-close'), last = null;
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function hookFrame() { try { frame.contentWindow.addEventListener('keydown', onKey); } catch (err) {} }
+  function open(e) {
+    last = e && e.currentTarget;
+    frame.srcdoc = src.getAttribute('srcdoc');
+    frame.onload = hookFrame;
+    ov.hidden = false; document.body.classList.add('no-scroll');
+    closeBtn.focus();
+  }
+  function close() {
+    if (ov.hidden) return;
+    ov.hidden = true; document.body.classList.remove('no-scroll');
+    frame.removeAttribute('srcdoc');
+    if (last) last.focus();
+  }
+  document.querySelectorAll('[data-open]').forEach(function (b) { b.addEventListener('click', open); });
+  closeBtn.addEventListener('click', close);
+  ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+  document.addEventListener('keydown', onKey);
+
+  // Practice board: lines of three.
+  var L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  var tiles = Array.prototype.slice.call(document.querySelectorAll('.mt'));
+  var read = document.querySelector('.mini-read'), fill = document.getElementById('bar-fill'), pts = document.getElementById('bar-pts');
+  var on = [false, false, false, false, true, false, false, false, false];
+  function update() {
+    var won = L.filter(function (l) { return l.every(function (k) { return on[k]; }); });
+    var n = on.filter(Boolean).length - 1;
+    tiles.forEach(function (t, k) {
+      t.setAttribute('aria-pressed', on[k] ? 'true' : 'false');
+      t.classList.toggle('lit', won.some(function (l) { return l.indexOf(k) > -1; }));
+    });
+    fill.style.width = (n / 8 * 100) + '%';
+    pts.textContent = n + ' of 8 pts';
+    if (n === 8) read.textContent = 'All 8 collected! 8 lines and a grand prize draw entry 🏆';
+    else if (won.length > 1) read.textContent = won.length + ' lines of three! ' + won.length + ' mini prizes 🎁';
+    else if (won.length === 1) read.textContent = 'Three in a row! Mini prize unlocked 🎁';
+    else if (n === 0) read.textContent = 'Tap two squares in a line with the star.';
+    else read.textContent = n + (n === 1 ? ' stop' : ' stops') + ' stamped. No line yet.';
+  }
+  tiles.forEach(function (t, k) {
+    if (k === 4) return;
+    t.addEventListener('click', function () { on[k] = !on[k]; update(); });
+  });
+  document.querySelector('.mini-reset').addEventListener('click', function () { on = on.map(function (v, k) { return k === 4; }); update(); });
+  update();
+})();
+</script>
+</div>
