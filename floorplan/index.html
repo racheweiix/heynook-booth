@@ -217,7 +217,7 @@
       <p class="fp-sheet-desc" data-fp-s-desc></p>
       <div class="fp-actions">
         <button type="button" class="fp-primary" data-fp-s-primary></button>
-        <a class="fp-secondary" target="_blank" rel="noopener" data-fp-s-link>Open in NookPass
+        <a class="fp-secondary" target="_top" data-fp-s-link>Open in NookPass
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
         </a>
       </div>
@@ -266,21 +266,20 @@
     { id: "entrance", label: "Entrance", sub: "LIFT", kind: "entry", x: 250, y: 12, w: 92, h: 42,
       initials: "IN", grad: "linear-gradient(135deg, #8A93A6, #5B6478)", where: "Level 3 lift lobby",
       desc: "Take the lift up to Level 3 at 33/34 Boat Quay. This is also the exit, where you can claim your final gift with your golden ticket on the way out." },
-    { id: "gift", label: "Final gift", sub: "BOOTH 05 · EXIT", kind: "guest", ex: "gift", x: 128, y: 12, w: 116, h: 40 },
+    { id: "gift", label: "Final gift", sub: "BOOTH 05 · EXIT", kind: "guest", ex: "gift", x: 132, y: 12, w: 104, h: 40 },
     { id: "registration", label: "Registration", sub: "CHECK-IN", kind: "guest", x: 132, y: 60, w: 96, h: 40,
       initials: "RG", grad: "linear-gradient(135deg, #C8901E, #F2C94C)",
       desc: "Check in with NookPass and pick up your badge. Registration opens at 11:00 am." },
-    { id: "lunch", label: "Lunch", sub: "BUFFET", kind: "guest", x: 238, y: 64, w: 50, h: 130,
+    { id: "lunch", label: "Lunch", sub: "BUFFET", kind: "guest", x: 238, y: 64, w: 50, h: 112,
       initials: "LU", grad: "linear-gradient(135deg, #C8901E, #F2C94C)",
       desc: "Lunch is served here during the keynote and live product demo." },
     { id: "stage", label: "Main Presentation", sub: "STAGE", kind: "talk", x: 14, y: 124, w: 78, h: 96,
       initials: "ST", grad: "linear-gradient(135deg, #0075ED, #22D3EE)",
       desc: "Main Presentation: Agentic AI is the future of event management. Welcome speech, then the keynote and live product demo with Joe from 12:30 to 2:00 pm. Scan the QR code during the presentation for passport stamp 5." },
-    { id: "onsite", label: "Check-in & Badges", sub: "BOOTH 01", kind: "booth", ex: "onsite", x: 12, y: 240, w: 84, h: 44 },
-    { id: "photo", label: "NookPhoto", sub: "BOOTH 03", kind: "booth", ex: "ai", x: 12, y: 290, w: 84, h: 50 },
-    { id: "nookpass", label: "NookPass", sub: "BOOTH 02", kind: "booth", ex: "app", x: 188, y: 314, w: 80, h: 40 },
-    { id: "passport", label: "Passport", sub: "BOOTH 04", kind: "booth", ex: "engage", x: 274, y: 310, w: 70, h: 48 },
-    { id: "ai", label: "FlowAI", sub: "BOOTH 03", kind: "booth", ex: "ai", x: 96, y: 404, w: 78, h: 40 }
+    { id: "onsite", label: "Check-in & Badges", sub: "BOOTH 01", kind: "booth", ex: "onsite", x: 12, y: 232, w: 84, h: 76 },
+    { id: "nookpass", label: "NookPass", sub: "BOOTH 02", kind: "booth", ex: "app", x: 188, y: 300, w: 80, h: 64 },
+    { id: "passport", label: "Passport", sub: "BOOTH 04", kind: "booth", ex: "engage", x: 274, y: 300, w: 70, h: 64 },
+    { id: "creators", label: "Creator's Hub", sub: "BOOTH 03", kind: "booth", ex: "ai", x: 96, y: 372, w: 84, h: 72 }
   ];
 
   /* background drawing: type box | seat | wall | stairs | balcony | label */
@@ -442,6 +441,13 @@
       if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
       else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
     }
+  });
+
+  /* "Open in NookPass": stay in the same window (the whole app if allowed, else this frame) */
+  sLink.addEventListener("click", function (ev) {
+    ev.preventDefault();
+    var url = sLink.href;
+    try { window.top.location.href = url; } catch (err) { window.location.href = url; }
   });
 
   /* locate a booth on the map */
