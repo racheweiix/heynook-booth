@@ -67,11 +67,22 @@
   background:rgba(42,40,38,.55);color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
 #fsb svg{width:34px;height:34px}
 #fsb.on{display:flex}
-.turned.inapp #fsb{top:986px}   /* turned inside NookPass: the bottom-left of the phone, clear of NookPass's QR button */
+.turned.inapp #fsb{top:760px}   /* turned inside NookPass: low on the phone's left, clear of NookPass's QR button and of Start over */
 /* upright phone (.port): the stage stands up (1080x1920); the turn-sideways button isn't needed there */
-.port #fsb{left:986px}
+.port #fsb{left:716px}
 .port .stamp{font-size:46px}
-.port #vplay video{inset:auto;left:0;top:656px;width:1080px;height:608px}
+.port #vplay video{inset:auto;left:0;width:800px;height:450px}
+/* upright board: compact tiles (name, picture, Play) instead of the wordy landscape tags */
+.tagp{position:absolute;left:0;top:0;width:236px;height:360px;background:#FBF8F1;box-shadow:0 0 0 6px #fff,0 14px 20px rgba(40,28,10,.26);cursor:pointer;z-index:20;box-sizing:border-box;padding:18px 18px 16px}
+.tagp .lt{display:flex;align-items:center;gap:10px}
+.tagp .lt b{width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--paper);font:400 32px/56px 'Archivo Black';text-align:center}
+.tagp .lt i{font:800 18px Inter;letter-spacing:.12em;color:#fff;background:var(--red);border-radius:7px;padding:5px 9px;font-style:normal}
+.tagp h3{margin:12px 0 0;font:400 32px/1.05 'Archivo Black'}
+.tagp .ill{position:absolute;left:10px;top:150px;width:300px;height:196px;transform:scale(.7);transform-origin:0 0}
+.tagp .ill img{position:absolute}
+.tagp .go{position:absolute;left:18px;right:18px;bottom:14px;border-top:3px dashed rgba(0,0,0,.18);padding-top:10px;font:400 28px 'Archivo Black'}
+.tagp.done .go{color:var(--green)}
+.port #hop{width:290px;height:430px}
 #fsnote{position:absolute;right:24px;top:108px;z-index:55;background:#2A2826;color:#F5EFE1;font:22px 'Special Elite';padding:10px 16px;border-radius:10px;display:none}
 </style>
 </head>
@@ -92,7 +103,7 @@
 const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
 const L = document.getElementById('L'), frame = document.getElementById('game'), IMG = '../games/assets/img/';
 const BEAT = .531;
-if (G.PORT) { const nw = document.querySelectorAll('.news'); [[600, 150, 440, 200, 3], [30, 880, 420, 200, -4]].forEach(([l, t, w, h, r], i) => Object.assign(nw[i].style, { left: l + 'px', top: t + 'px', width: w + 'px', height: h + 'px', transform: `rotate(${r}deg)` })); }
+if (G.PORT) { const nw = document.querySelectorAll('.news'); [[430, 110, 340, 150, 3], [20, 560, 300, 140, -4]].forEach(([l, t, w, h, r], i) => Object.assign(nw[i].style, { left: l + 'px', top: t + 'px', width: w + 'px', height: h + 'px', transform: `rotate(${r}deg)` })); }
 const PASS = (location.search.match(/[?&](port|land)\b/) || [''])[0].replace('&', '?');   // ?port / ?land (testing) carry on into the games
 const TAGS = [
   { k: 'A', isNew: true, title: 'Table allocation', line: 'Move a guest. Who else finds out?', game: 'a', name: 'Same Page' },
@@ -114,7 +125,7 @@ function ground(y) {   // upright: the torn ground runs down to the bottom of th
 }
 function sun(x, y, r) { const s = $(`<div class="sun" style="width:${r * 2}px;height:${r * 2}px"></div>`, L); place(s, x - r, y - r); return s; }
 function cut(parent, src, x, y, w, r = 0, z = 10) { if (typeof parent === 'string') return cut(L, parent, src, x, y, w, r); const i = $(`<img class="cut cutimg" src="${IMG}${src}" alt="" style="width:${w}px;z-index:${z}">`, parent); place(i, x, y, r); return i; }
-const DROP = G.P(1100, 2100);   // how far above its place a piece waits before it drops in
+const DROP = G.P(1100, G.H + 300);   // how far above its place a piece waits before it drops in
 async function drop(el, x, y, r = 0) { place(el, x, y - DROP, r); await tween(.42, e => place(el, x, y - DROP * (1 - e), r), 'out'); sfx('paper', -10); }
 const bestOf = g => { const rows = G.lb.load(g.toUpperCase()); return rows[0] || null; };
 function clearScreen() {
@@ -172,20 +183,22 @@ const TABLET = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoin
 function attract(reset) {
   clearScreen(); screen = 'attract'; fsSync(); clearTimeout(idleT);
   if (reset) played.clear();
-  const gy = G.P(840, 1180), PV = G.P([520, 950, 960, 560], [90, 540, 540, 830]);   // ground; printer x's; sun centre
-  ground(gy); sun(PV[2], PV[3], 250);
-  const pv = cut('printer-pvc.png', PV[0], gy + 8 - 492, 400, 0, 10), bp = cut('printer-badge.png', PV[1], gy + 8 - 394, 430, 0, 11);
-  $('<div class="stamp" style="color:var(--mustard)">BOOTH 01 · ONSITE</div>', L); G.stage.querySelector('#L .stamp').style.transform = `translate(${G.P(110, 70)}px,${G.P(90, 120)}px) rotate(-6deg)`;
+  // upright: printers on the ground at 62% of the height, smaller (3/4), the scores card and Tap to start below
+  const gy = G.P(840, Math.round(G.H * .62)), PV = G.P([520, 950, 960, 560, 250, 400, 430], [50, 400, 400, gy - 250, 200, 300, 322]);   // ground; printer x's; sun centre, radius; printer widths
+  const ph = [492 * PV[5] / 400, 394 * PV[6] / 430];                                                                                // printer heights
+  ground(gy); sun(PV[2], PV[3], PV[4]);
+  const pv = cut('printer-pvc.png', PV[0], gy + 8 - ph[0], PV[5], 0, 10), bp = cut('printer-badge.png', PV[1], gy + 8 - ph[1], PV[6], 0, 11);
+  $('<div class="stamp" style="color:var(--mustard)">BOOTH 01 · ONSITE</div>', L); G.stage.querySelector('#L .stamp').style.transform = `translate(${G.P(110, 40)}px,${G.P(90, 70)}px) rotate(-6deg)`;
   const st = $('<div class="strip"><span>Onsite, off the paper.</span><i class="tape" style="left:-34px;top:-6px;transform:rotate(-24deg)"></i><i class="tape" style="right:-34px;bottom:-8px;transform:rotate(-20deg)"></i></div>', L);
-  place(st, G.P(120, 90), G.P(240, 300), -1);
+  place(st, G.P(120, 50), G.P(240, 190), -1);
   const rows = TAGS.filter(t => t.game).map(t => { const b = bestOf(t.game); return `<div><b>${t.k}</b>${t.name}<em>${b ? b.ini + ' · ' + b.label : '–'}</em></div>`; }).join('');
-  const best = $(`<div class="best"><h4>TODAY'S BEST</h4>${rows}</div>`, L); place(best, G.P(1390, 305), G.P(140, 1250), 2);
-  const tp = $(`<div style="position:absolute;left:0;top:0;font:30px Special Elite;color:#E7DDC6;z-index:6">${GAMES.length} mini games · ${VIDEOS.length} short videos</div>`, L); place(tp, G.P(120, 100), G.P(1000, 1720));
+  const best = $(`<div class="best"><h4>TODAY'S BEST</h4>${rows}</div>`, L); place(best, G.P(1390, 165), G.P(140, gy + 40), 2);
+  if (!G.PORT) { const tp = $(`<div style="position:absolute;left:0;top:0;font:30px Special Elite;color:#E7DDC6;z-index:6">${GAMES.length} mini games · ${VIDEOS.length} short videos</div>`, L); place(tp, 120, 1000); }
   const b = button('Tap to start ▸', 800, 900, async () => { if (TABLET) goFull(); await G.audio(); G.music('loop.wav', -18); board(); }, true); L.appendChild(b);
-  if (G.PORT) place(b, G.cx(b), 1550);
+  if (G.PORT) place(b, G.cx(b), G.H - 165);
   // the printers breathe on the beat
   const run = RUN; let k = 0;
-  hopT = setInterval(() => { if (run !== RUN) return; k++; const s = k % 2 ? 1.015 : 1; pv.style.transform = `translate(${PV[0]}px,${gy + 8 - 492 - (s - 1) * 400}px) scale(${s})`; bp.style.transform = `translate(${PV[1]}px,${gy + 8 - 394 - (s - 1) * 300}px) scale(${2 - s})`; }, BEAT * 1000);
+  hopT = setInterval(() => { if (run !== RUN) return; k++; const s = k % 2 ? 1.015 : 1; pv.style.transform = `translate(${PV[0]}px,${gy + 8 - ph[0] - (s - 1) * 400}px) scale(${s})`; bp.style.transform = `translate(${PV[1]}px,${gy + 8 - ph[1] - (s - 1) * 300}px) scale(${2 - s})`; }, BEAT * 1000);
 }
 
 // ---------- the board ----------
@@ -206,31 +219,34 @@ function illus(t) {
 async function board(fromGame) {
   clearScreen(); screen = 'board'; fsSync(); armIdle();
   const run = RUN;
-  const s = strip('Pick one to see it work.', G.P(90, 40), 40, { rot: -1 });
-  const hg = $(`<div class="sect">GAMES <em>play &amp; beat today's best</em></div>`, L); place(hg, G.P(117, 65), G.P(138, 160), -1);
-  const hv = $(`<div class="sect">VIDEOS <em>21 seconds each</em></div>`, L); place(hv, G.P(1177, 65), G.P(138, 900), 1);   // upright: games on top, videos below
+  const s = strip('Pick one to see it work.', G.P(90, 24), G.P(40, 24), { rot: -1 });
+  const ex = G.PORT ? Math.max(0, G.H - 1195) : 0;            // upright: extra height on taller phones spreads the rows
+  const hg = $(`<div class="sect">GAMES${G.PORT ? '' : " <em>play &amp; beat today's best</em>"}</div>`, L); place(hg, G.P(117, 24), G.P(138, 132 + ex * .12), -1);
+  const hv = $(`<div class="sect">VIDEOS <em>${G.PORT ? '21 s' : '21 seconds each'}</em></div>`, L); place(hv, G.P(1177, 24), G.P(138, 592 + ex * .3), 1);   // upright: games on top, videos below
   if (!G.PORT) $(`<svg class="divide" viewBox="0 0 30 720"><path fill="#2A2826" d="M8 0 ${Array.from({ length: 37 }, (_, k) => `L${(8 + (G.rnd() - .5) * 8).toFixed(1)} ${k * 20}`).join(' ')} L22 720 ${Array.from({ length: 37 }, (_, k) => `L${(22 + (G.rnd() - .5) * 8).toFixed(1)} ${720 - k * 20}`).join(' ')} Z"/></svg>`, L).style.transform = 'translate(1121px,150px)';
   const cards = TAGS.map((t, i) => {
     const b = t.game ? bestOf(t.game) : null, done = played.has(t.k);
-    const c = $(`<div class="tagc${done ? ' done' : ''}${t.video ? ' vid' : ''}"><div class="lt"><b>${t.k}</b>${t.isNew ? '<i>NEW</i>' : ''}</div><h3>${t.title}</h3>
+    const c = G.PORT ? $(`<div class="tagp${done ? ' done' : ''}"><div class="lt"><b>${t.k}</b>${t.isNew ? '<i>NEW</i>' : ''}</div><h3>${t.game ? t.name : t.k === 'B' ? 'PVC cards' : 'Badge box'}</h3>
+      <div class="ill">${illus(t)}</div><div class="go">${done ? '✓ ' + (t.game ? 'Played' : 'Watched') : t.game ? '▸ Play' : '▸ Watch'}</div></div>`, L)
+      : $(`<div class="tagc${done ? ' done' : ''}${t.video ? ' vid' : ''}"><div class="lt"><b>${t.k}</b>${t.isNew ? '<i>NEW</i>' : ''}</div><h3>${t.title}</h3>
       <div class="ill">${illus(t)}</div><p><span>${t.game ? 'Game: ' + t.name : 'Video · 21 s'}</span>${t.line}</p>
       <div class="ft"><div class="go">${done ? '✓ ' + (t.game ? 'Played' : 'Watched') : t.game ? '▸ Play' : '▸ Watch'}</div>
       <div class="bt">${t.game ? (b ? `Best today: ${b.ini} · ${b.label}` : 'Best today: be the first') : t.k === 'E' ? 'Then pick yours here' : 'Then try it at the booth'}</div></div></div>`, L);
     // games on the left, videos on the right, a torn line between them
     const gi = GAMES.indexOf(t), vi = VIDEOS.indexOf(t);
-    const x = G.PORT ? (t.game ? 65 + gi * 325 : 227 + vi * 325) : t.game ? 117 + gi * 325 : 1177 + vi * 325, y = G.PORT ? (t.game ? 230 : 970) : 215, r = [-1.5, 1, -.5, 1.5, -1][i];
+    const x = G.PORT ? 24 + (t.game ? gi : vi) * 256 : t.game ? 117 + gi * 325 : 1177 + vi * 325, y = G.PORT ? (t.game ? 190 + ex * .12 : 650 + ex * .3) : 215, r = [-1.5, 1, -.5, 1.5, -1][i];
     place(c, x, y - DROP, r);                // wait above the screen until its turn to drop (not at the top-left corner)
     c.addEventListener('pointerup', () => { if (screen === 'board') { sfx('click', -10); t.video ? playVideo(t) : chapter(t); } });
-    $(`<i class="tape" style="left:120px;top:-16px;transform:rotate(${r * 4}deg)"></i>`, c);
+    $(`<i class="tape" style="left:${G.P(120, 75)}px;top:-16px;transform:rotate(${r * 4}deg)"></i>`, c);
     return { c, x, y, r };
   });
   // the tags drop in one per eighth note
   for (const [i, k] of cards.entries()) { if (run !== RUN) return; drop(k.c, k.x, k.y, k.r); await wait(BEAT * 500); }
   if (run !== RUN) return;
   const ring = $(`<svg id="hop" viewBox="0 0 400 680"><ellipse cx="200" cy="340" rx="190" ry="330" fill="none" stroke="#E9A923" stroke-width="9" stroke-dasharray="1200" stroke-linecap="round" transform="rotate(-3 200 340)"/></svg>`, L);
-  let h = 0; const hop = () => { const k = cards[h % cards.length]; place(ring, k.x - 35, k.y - 35, 0); h++; };
+  let h = 0; const hop = () => { const k = cards[h % cards.length]; place(ring, k.x - G.P(35, 27), k.y - G.P(35, 35), 0); h++; };
   hop(); hopT = setInterval(() => { if (run === RUN) hop(); }, BEAT * 2000);
-  const so = button('Start over', G.P(1640, 65), G.P(940, 1700), () => attract(true)); L.appendChild(so);
+  const so = button('Start over', G.P(1640, 24), G.P(940, G.H - 120), () => attract(true)); L.appendChild(so);
   await s;
 }
 
@@ -242,6 +258,8 @@ const CH = {
   D: { stamp: 'NEW · GOLD & WHITE TEXT', lines: ['Not just black.', 'Gold and white text that stands out.', 'Badges worth keeping after the event.'] },
   E: { stamp: 'YOUR BADGE BOX', lines: ['Badges from Google, AWS and Microsoft events.', 'For a client pitch. A keepsake.', 'Ideas for your own event.'] },
 };
+const SHORT = { A: ['Three copies. Three answers.', 'EventNook: one live plan.'], B: ['Your design, printed on site.', 'Credit-card quality.'],
+  C: ['Guests check themselves in.', 'Scan. The badge prints.'], D: ['Not just black.', 'Gold and white text stands out.'], E: ['Real badges from real events.', 'Pick yours at the counter.'] };
 const MF = `<div style="position:relative;width:208px;height:325px;overflow:hidden;background:#FFFFFF;font-family:'Outfit',system-ui,sans-serif;color:#1F2937">
 <div style="position:absolute;right:-46px;top:-46px;width:130px;height:130px;border-radius:50%;background:#2563EB"></div>
 <div style="position:absolute;left:-38px;top:140px;width:76px;height:76px;border-radius:50%;background:#F5B400"></div>
@@ -375,16 +393,21 @@ async function hero(k, run, step) {          // step 0: lands with the first lin
 }
 async function chapter(t) {
   clearScreen(); screen = 'chapter'; fsSync(); armIdle(); const run = RUN;
-  ground(G.P(860, 980));
-  HL = G.PORT ? $('<div class="layer" style="transform:translate(-900px,120px)"></div>', L) : L;   // upright: the hero moves above the lines
+  // upright: the hero (drawn for landscape x 960-1905, y 230-860) is scaled to 0.8 and moved to the top; the lines and buttons sit below
+  const ex = G.PORT ? Math.max(0, G.H - 1195) : 0, Ht = 150 + ex * .15, gy = G.P(860, Ht + 504);
+  ground(gy);
+  HL = G.PORT ? $(`<div class="layer" style="transform-origin:0 0;transform:translate(-746px,${Ht - 184}px) scale(.8)"></div>`, L) : L;
   if (!t.game) played.add(t.k);
   const c = CH[t.k];
-  stamp(c.stamp, G.P(90, 50), G.P(110, 100), t.isNew ? 'var(--red)' : 'var(--mustard)', -4).then(s => L.appendChild(s));
-  const pb = t.game ? button(`Play ${t.name} ▸`, G.P(90, 50), G.P(930, 1560), () => openGame(t), true) : null; if (pb) L.appendChild(pb);
-  L.appendChild(button('Back to the board', G.P(pb ? 90 + pb.offsetWidth + 34 : 90, 50), G.P(930, pb ? 1700 : 1560), () => board(), !pb));
+  stamp(G.PORT ? c.stamp.replace('NEW · ', '') : c.stamp, G.P(90, 28), G.P(110, 60), t.isNew ? 'var(--red)' : 'var(--mustard)', -4).then(s => L.appendChild(s));
+  const pb = t.game ? button(`Play ${t.name} ▸`, G.P(90, 24), G.P(930, G.H - 280), () => openGame(t), true) : null; if (pb) L.appendChild(pb);
+  L.appendChild(button('Back to the board', G.P(pb ? 90 + pb.offsetWidth + 34 : 90, 24), G.P(930, G.H - 160), () => board(), !pb));   // upright: Play above, Back below, left (clear of the QR button)
   await hero(t.k, run, 0); if (run !== RUN) return;
   for (let i = 0; i < c.lines.length; i++) {
-    const s = await strip(c.lines[i], G.P(90, 50), G.P(300 + i * 100, 1050 + i * 110), { rot: [-1, .8, -.6, .5][i] }); if (run !== RUN) return; L.appendChild(s);
+    if (!G.PORT) { const s = await strip(c.lines[i], 90, 300 + i * 100, { rot: [-1, .8, -.6, .5][i] }); if (run !== RUN) return; L.appendChild(s); }
+    else if (i === 0 || i === c.lines.length - 1) {                 // upright: the first and the last beat get one short line each
+      const j = i ? 1 : 0, s = await strip(SHORT[t.k][j], 24, gy + 50 + j * 96, { rot: [-1, .8][j] }); if (run !== RUN) return; L.appendChild(s);
+    } else await wait(900);
     if (i) { await hero(t.k, run, i); if (run !== RUN) return; }
     await wait(500);
   }
@@ -396,13 +419,14 @@ function playVideo(t) {
   clearScreen(); screen = 'video'; fsSync(); clearTimeout(idleT); const run = RUN;
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
   vplay.style.display = 'block'; vid.src = t.video; vid.currentTime = 0; vid.play().catch(() => {});
+  const vt = Math.round((G.H - 450) / 2); if (G.PORT) vid.style.top = vt + 'px';   // upright: the 16:9 video across the middle
   const back = button('✕ Back', 1660, 26, () => endVideo(t, false)); back.style.zIndex = 46; back.classList.add('vbtn'); back.style.font = "400 26px 'Archivo Black'"; back.style.padding = '14px 22px';
-  if (G.PORT) place(back, G.W - back.offsetWidth - 40, 480);   // upright: just above the video
+  if (G.PORT) place(back, G.W - back.offsetWidth - 24, vt - 110);   // upright: just above the video
   vid.onended = () => {
     if (run !== RUN) return; played.add(t.k); back.remove(); armIdle(); screen = 'videoEnd'; fsSync();
     const again = button('Watch again', 600, 900, () => { G.stage.querySelectorAll('.vbtn').forEach(b => b.remove()); playVideo(t); }); again.classList.add('vbtn'); again.style.zIndex = 46;
     const bb = button('Back to the board ▸', 960, 900, () => endVideo(t, true), true); bb.classList.add('vbtn'); bb.style.zIndex = 46;
-    if (G.PORT) { place(bb, G.cx(bb), 1340); place(again, G.cx(again), 1480); }   // upright: under the video
+    if (G.PORT) { place(bb, G.cx(bb), vt + 490); place(again, G.cx(again), vt + 610); }   // upright: under the video
   };
 }
 function endVideo(t, watched) {

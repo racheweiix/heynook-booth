@@ -12,7 +12,12 @@
   // ?port / ?land force one (for testing). If the screen turns the other way later, the page reloads in the other layout.
   const forced = /[?&](port|land)\b/.test(location.search);
   G.PORT = /[?&]port\b/.test(location.search) || (!forced && !G.rot && innerHeight > innerWidth);
-  G.W = G.PORT ? 1080 : 1920; G.H = G.PORT ? 1920 : 1080;
+  // upright: 800 wide (so everything reads about 35% bigger than a 1080-wide stage would) and as tall as the screen's own
+  // shape (1150-1800), so it fills the frame edge to edge whatever the phone and browser bars
+  const ratio = innerWidth > 0 && innerHeight > 0 ? innerHeight / innerWidth : 1.6;
+  G.W = G.PORT ? 800 : 1920; G.H = G.PORT ? Math.max(1150, Math.min(1800, Math.round(800 * ratio))) : 1080;
+  if (G.PORT) { G.stage.style.width = G.W + 'px'; G.stage.style.height = G.H + 'px'; }
+  G.QR = { x: 600, y: G.H - 165 };   // upright inside NookPass: its round QR button covers x > 600, y > QR.y (keep taps out of there)
   G.P = (land, port) => G.PORT ? port : land;
   document.documentElement.classList.toggle('port', G.PORT);
   let reloading = false;
@@ -208,30 +213,31 @@
 
   // ---- the title card and the result card (same for every game) ----
   G.titleCard = (kicker, title, sub, onPlay) => {
-    const t = G.$(`<div class="card" style="left:${G.P(560, 90)}px;top:${G.P(300, 560)}px;width:${G.P(800, 788)}px;padding:46px 56px;text-align:center">
+    const TT = G.P(300, Math.round(G.H * .26));
+    const t = G.$(`<div class="card" style="left:${G.P(560, 40)}px;top:${TT}px;width:${G.P(800, 608)}px;padding:46px 56px;text-align:center">
       <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${kicker}</div>
       <div style="font:72px/1.05 'Archivo Black';margin:14px 0 10px">${title}</div>
       <div style="font:30px/1.35 'Special Elite'">${sub}</div></div>`);
     const b = G.button('Tap to play ▸', 790, 690, async () => { await G.audio(); G.music('loop.wav'); t.remove(); b.remove(); onPlay(); }, true);
-    if (G.PORT) G.place(b, G.cx(b), 560 + t.offsetHeight + 60);
+    if (G.PORT) G.place(b, G.cx(b), TT + t.offsetHeight + 56);
     return t;
   };
   // the result card; with `lb` ({title, score, label, higher}) a leaderboard panel sits beside it
   G.result = async ({ kicker, heads, rows, stamp, stampColor = 'var(--mustard)', game, again, back, lb }) => {
     const dim = G.$('<div data-dim style="position:absolute;inset:0;background:rgba(231,221,198,.72);z-index:41"></div>'); dim.style.opacity = 0;
     G.tween(.3, e => dim.style.opacity = e);
-    const L = G.P(lb ? 90 : 410, 40), W = G.P(lb ? 1030 : 1100, 1000), T = G.P(150, 130);
-    const c = G.$(`<div class="card" style="left:${L}px;top:${T}px;width:${W}px;padding:40px 50px 30px;box-sizing:border-box">
+    const L = G.P(lb ? 90 : 410, 24), W = G.P(lb ? 1030 : 1100, 752), T = G.P(150, 74);
+    const c = G.$(`<div class="card" style="left:${L}px;top:${T}px;width:${W}px;padding:${G.P('40px 50px 30px', '30px 30px 20px')};box-sizing:border-box">
       <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${kicker}</div>
       <table class="res"><tr><th></th><th>${heads[0]}</th><th>${heads[1]}</th></tr>
       ${rows.map(r => `<tr><td>${r[0]}</td><td class="v old">${r[1]}</td><td class="v">${r[2]}</td></tr>`).join('')}</table></div>`);
     G.sfx('paper', -10); await G.tween(.3, e => G.place(c, 0, 600 * (1 - e), -1));
     const h = c.offsetHeight;
-    await G.stamp(stamp, G.PORT ? Math.max(20, G.W - 70 - (44 * stamp.length + 66)) : L + W + 20 - 34 * stamp.length, T - 80, stampColor, -6, 44);   // upright: kept inside the screen
+    await G.stamp(stamp, G.PORT ? Math.max(16, G.W - 40 - (40 * stamp.length + 60)) : L + W + 20 - 34 * stamp.length, G.P(T - 80, T - 58), stampColor, -6, 44);   // upright: kept inside the screen
     const pa = G.button('Play again', L + W / 2 - 330, T + h + 40, again);
     const bk = G.button('Back to the board ▸', L + W / 2 - 10, T + h + 40, () => { parent.postMessage({ type: 'game-done', game }, '*'); back(); }, true);
-    if (G.PORT) { const gap = 24, w = pa.offsetWidth + gap + bk.offsetWidth, x0 = Math.max(20, Math.round((G.W - w) / 2)); G.place(pa, x0, T + h + 40); G.place(bk, x0 + pa.offsetWidth + gap, T + h + 40); }
-    if (lb) G.lbPanel(game, lb, G.PORT ? T + h + 40 + bk.offsetHeight + 50 : null);
+    if (G.PORT) { const gap = 18, w = pa.offsetWidth + gap + bk.offsetWidth, x0 = Math.max(12, Math.round((G.W - w) / 2)); G.place(pa, x0, T + h + 28); G.place(bk, x0 + pa.offsetWidth + gap, T + h + 28); }
+    if (lb) G.lbPanel(game, lb, G.PORT ? T + h + 28 + bk.offsetHeight + 34 : null);
   };
 
   // ---- today's leaderboard: top 5 per game, kept on this screen (localStorage), initials only ----

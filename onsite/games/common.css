@@ -67,7 +67,14 @@ body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920p
 .lbkey{height:74px;border:4px solid var(--ink);border-radius:12px;background:var(--strip);font:400 30px 'Archivo Black';color:var(--ink);box-shadow:0 5px 0 var(--ink);cursor:pointer;padding:0}
 .lbkey:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
 .lbkey.ok{background:var(--mustard);font-size:24px}.lbkey.ok.off{opacity:.4}
-/* portrait (a phone held upright): the stage stands up, 1080x1920; the same pieces at the same size, laid out top to bottom */
-.port #stage{width:1080px;height:1920px}
-.port .strip{font-size:32px;line-height:1.2}
-.port .lbp{left:210px}
+/* portrait (a phone held upright): the stage stands up, 800 wide and as tall as the screen's shape (set in common.js);
+   any sliver around it, and around the sideways view, is paper rather than black */
+.port,.port body,.turned,.turned body{background:#E7DDC6}
+.port .strip{font-size:34px;line-height:1.2;padding:12px 22px 10px}
+.port .lbp{left:24px;width:752px;padding:22px 30px 22px}
+.port .res{font-size:28px;margin-top:8px}.port .res th{font-size:19px;padding:0 6px 6px}.port .res td{padding:8px 6px}.port .res td.v{font-size:32px;width:180px}
+.port .lbk{font-size:22px}.port .lr{font-size:30px;padding:8px 8px}.port .lbe,.port .lbt{font-size:28px;margin-top:6px}
+.port .lbs{margin:6px 0 10px}.port .lbs i{width:72px;height:62px;font-size:48px;line-height:62px}
+.port .lbg{grid-template-columns:repeat(10,63px);gap:6px}.port .lbkey{height:70px;font-size:30px}.port .lbkey.ok{font-size:22px}   /* 3 rows: stays above NookPass's QR button */
+.port .hud{font-size:28px}.port .hud b{font-size:34px}
+.port .btn{font-size:36px;padding:20px 30px}
