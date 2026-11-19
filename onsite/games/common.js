@@ -12,6 +12,7 @@
     const s = Math.min(W / 1920, H / 1080);
     G.s = s; G.ox = (W - 1920 * s) / 2; G.oy = (H - 1080 * s) / 2;
     G.stage.style.transform = turn ? `translate(${innerWidth - G.oy}px,${G.ox}px) rotate(90deg) scale(${s})` : `translate(${G.ox}px,${G.oy}px) scale(${s})`;
+    document.documentElement.classList.toggle('turned', turn);   // lighter effects while turned (see common.css)
   };
   addEventListener('resize', G.fit); G.fit();
   G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s, y: (y - G.oy) / G.s }; };   // screen point -> stage point

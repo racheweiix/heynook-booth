@@ -30,6 +30,11 @@ body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920p
 /* paper people (shared by games B, C and D): a standing cut-out, feet at its anchor point */
 .pup{position:absolute;left:0;top:0;width:200px;height:420px;transform-origin:50% 100%;filter:drop-shadow(0 6px 0 rgba(40,28,10,.18))}
 .pup svg{width:100%;height:100%;overflow:visible}
+/* turned sideways on a phone the stage is one big rotated layer: drop the costly blends and filters so it stays smooth */
+.turned .grain{display:none}
+.turned .cut{filter:drop-shadow(0 6px 5px rgba(40,28,10,.26))}
+.turned .pup{filter:none}
+.turned .stamp{mix-blend-mode:normal}
 .pup svg *{stroke:#fff;stroke-width:7;paint-order:stroke;stroke-linejoin:round}
 .pup svg .ln{stroke:#1d1d2b;stroke-width:4;paint-order:normal;fill:none;stroke-linecap:round}
 .pup svg .nb,.pup svg .slot *{stroke-width:0}

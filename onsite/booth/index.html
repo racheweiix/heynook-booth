@@ -67,6 +67,7 @@
   background:rgba(42,40,38,.55);color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
 #fsb svg{width:34px;height:34px}
 #fsb.on{display:flex}
+.turned.inapp #fsb{top:986px}   /* turned inside NookPass: the bottom-left of the phone, clear of NookPass's QR button */
 #fsnote{position:absolute;right:24px;top:108px;z-index:55;background:#2A2826;color:#F5EFE1;font:22px 'Special Elite';padding:10px 16px;border-radius:10px;display:none}
 </style>
 </head>
@@ -119,6 +120,7 @@ addEventListener('pointerdown', armIdle);
 
 // ---------- full screen (iPad Safari needs the webkit names; iPhone has none, so the button stays hidden there) ----------
 const root = document.documentElement, fsb = document.getElementById('fsb');
+if (window.self !== window.top) root.classList.add('inapp');
 const fsOK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
 const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
 let fsRefused = false;
