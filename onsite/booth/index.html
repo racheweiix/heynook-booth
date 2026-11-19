@@ -125,7 +125,7 @@ function torn(y0, jag = 22, h = 260) {
   return d + ` L1920 ${y0} L1920 ${h} Z`;
 }
 function ground(y) {   // upright: the torn ground runs down to the bottom of the screen (the buttons and lines sit on it)
-  const h = G.PORT ? G.H - y + 20 : 260, g = $(`<svg id="ground" viewBox="0 0 1920 ${h}" style="height:${h}px"><path fill="#2A2826" d="${torn(34, 22, h)}"/></svg>`, L); place(g, 0, y); return g;
+  const h = G.PORT ? G.H - y + 20 : 660, g = $(   /* landscape: runs past the bottom so a taller full-screen stage stays grounded (the stage clips it) */`<svg id="ground" viewBox="0 0 1920 ${h}" style="height:${h}px"><path fill="#2A2826" d="${torn(34, 22, h)}"/></svg>`, L); place(g, 0, y); return g;
 }
 function sun(x, y, r) { const s = $(`<div class="sun" style="width:${r * 2}px;height:${r * 2}px"></div>`, L); place(s, x - r, y - r); return s; }
 function cut(parent, src, x, y, w, r = 0, z = 10) { if (typeof parent === 'string') return cut(L, parent, src, x, y, w, r); const i = $(`<img class="cut cutimg" src="${IMG}${src}" alt="" style="width:${w}px;z-index:${z}">`, parent); place(i, x, y, r); return i; }
