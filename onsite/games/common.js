@@ -7,16 +7,27 @@
   // stage turns; the page stays phone-sized (a wider page makes the phone zoom out). Once the phone itself is landscape,
   // nothing is turned. A game opened from the turned booth gets ?turn in its address.
   G.rot = /[?&]turn/.test(location.search);
+  // G.PORT: a screen taller than it is wide (a phone held upright) gets the portrait stage, 1080x1920: the same pieces at the
+  // same size, laid out top to bottom, so nobody has to turn their phone. G.P(landscape, portrait) picks a value.
+  // ?port / ?land force one (for testing). If the screen turns the other way later, the page reloads in the other layout.
+  const forced = /[?&](port|land)\b/.test(location.search);
+  G.PORT = /[?&]port\b/.test(location.search) || (!forced && !G.rot && innerHeight > innerWidth);
+  G.W = G.PORT ? 1080 : 1920; G.H = G.PORT ? 1920 : 1080;
+  G.P = (land, port) => G.PORT ? port : land;
+  document.documentElement.classList.toggle('port', G.PORT);
+  let reloading = false;
   G.fit = () => {
+    if (!forced && !G.rot && innerWidth > 0 && innerHeight > 0 && (innerHeight > innerWidth) !== G.PORT && !reloading) { reloading = true; setTimeout(() => location.reload(), 250); return; }
     const turn = G.turn = G.rot && innerHeight > innerWidth, W = turn ? innerHeight : innerWidth, H = turn ? innerWidth : innerHeight;
-    const s = Math.min(W / 1920, H / 1080);
-    G.s = s; G.ox = (W - 1920 * s) / 2; G.oy = (H - 1080 * s) / 2;
+    const s = Math.min(W / G.W, H / G.H);
+    G.s = s; G.ox = (W - G.W * s) / 2; G.oy = (H - G.H * s) / 2;
     G.stage.style.transform = turn ? `translate(${innerWidth - G.oy}px,${G.ox}px) rotate(90deg) scale(${s})` : `translate(${G.ox}px,${G.oy}px) scale(${s})`;
     document.documentElement.classList.toggle('turned', turn);   // lighter effects while turned (see common.css)
   };
   addEventListener('resize', G.fit); G.fit();
   G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s, y: (y - G.oy) / G.s }; };   // screen point -> stage point
   G.pt = e => G.toStage(e.clientX, e.clientY);
+  G.cx = el => Math.round((G.W - el.offsetWidth) / 2);   // x that centres an element on the stage
   G.$ = (html, parent = G.stage) => { const t = document.createElement('template'); t.innerHTML = html.trim(); const el = t.content.firstChild; parent.appendChild(el); return el; };
   G.wait = ms => new Promise(r => setTimeout(r, ms));
   let seed = 11; G.rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -44,26 +55,28 @@
   G.strip = async (text, x, y, opts = {}) => {
     const rot = opts.rot ?? (G.rnd() - .5) * 3;
     const el = G.$(`<div class="strip"><span></span><i class="car"></i><i class="tape" style="left:-34px;top:-6px;transform:rotate(-24deg)"></i><i class="tape" style="right:-34px;bottom:-8px;transform:rotate(-20deg)"></i></div>`);
-    const sp = el.querySelector('span'); sp.textContent = text; await document.fonts.ready; el.style.width = (el.offsetWidth + 8) + 'px'; sp.textContent = '';
+    const sp = el.querySelector('span'); sp.textContent = text; await document.fonts.ready;
+    const room = G.W - x - 40;                                          // portrait: a long line wraps instead of running off the stage
+    if (el.offsetWidth + 8 > room) { el.style.whiteSpace = 'normal'; el.style.width = room + 'px'; } else el.style.width = (el.offsetWidth + 8) + 'px'; sp.textContent = '';
     G.place(el, -2400, y, rot); G.sfx('paper', -14);
     await G.slideTo(el, x, y, .28, 'out', rot);
     for (let j = 1; j <= text.length; j++) { sp.textContent = text.slice(0, j); if (text[j - 1] !== ' ') G.key(); await G.wait(1000 / (opts.cps || 38)); }
     G.ding(); return el;
   };
-  G.unstrip = async el => { if (!el) return; G.sfx('whoosh-short', -20); await G.slideTo(el, 2100, el._y, .26, 'in'); el.remove(); };
-  G.stamp = async (text, x, y, color = 'var(--mustard)', rot = -8, z = 40) => {
-    const el = G.$(`<div class="stamp" style="color:${color};z-index:${z}">${text}</div>`);
+  G.unstrip = async el => { if (!el) return; G.sfx('whoosh-short', -20); await G.slideTo(el, G.W + 200, el._y, .26, 'in'); el.remove(); };
+  G.stamp = async (text, x, y, color = 'var(--mustard)', rot = -8, z = 40, parent = G.stage) => {
+    const el = G.$(`<div class="stamp" style="color:${color};z-index:${z}">${text}</div>`, parent);
     G.sfx('stamp', -6); await G.tween(.12, e => G.place(el, x, y, rot, 1.9 - .9 * e)); return el;
   };
   G.wipe = async (mid) => {           // a torn charcoal sheet sweeps across, the scene changes under it
-    const el = G.$('<svg class="wipe" viewBox="0 0 2100 1080"><path fill="#2A2826"/></svg>');
-    let d = 'M90 0'; for (let y = 0; y <= 1080; y += 30) d += ` L${(90 + (G.rnd() - .5) * 40).toFixed(0)} ${y}`;
-    d += ' L2010 1080'; for (let y = 1080; y >= 0; y -= 30) d += ` L${(2010 + (G.rnd() - .5) * 40).toFixed(0)} ${y}`;
+    const H = G.H, Wd = G.W + 180, el = G.$(`<svg class="wipe" viewBox="0 0 ${Wd} ${H}" style="width:${Wd}px;height:${H}px"><path fill="#2A2826"/></svg>`);
+    let d = 'M90 0'; for (let y = 0; y <= H; y += 30) d += ` L${(90 + (G.rnd() - .5) * 40).toFixed(0)} ${y}`;
+    d += ` L${Wd - 90} ${H}`; for (let y = H; y >= 0; y -= 30) d += ` L${(Wd - 90 + (G.rnd() - .5) * 40).toFixed(0)} ${y}`;
     el.querySelector('path').setAttribute('d', d + ' Z');
     G.sfx('whoosh-short', -12); G.sfx('paper', -14);
-    await G.tween(.36, e => G.place(el, -2100 + 2010 * e, 0), 'inout');
+    await G.tween(.36, e => G.place(el, -Wd + (Wd - 90) * e, 0), 'inout');
     if (mid) await mid();
-    await G.tween(.36, e => G.place(el, -90 + 2000 * e, 0), 'inout'); el.remove();
+    await G.tween(.36, e => G.place(el, -90 + (G.W + 80) * e, 0), 'inout'); el.remove();
   };
   G.button = (label, x, y, onTap, main = false) => {
     const b = G.$(`<button class="btn${main ? ' main' : ''}">${label}</button>`); G.place(b, x, y);
@@ -195,28 +208,30 @@
 
   // ---- the title card and the result card (same for every game) ----
   G.titleCard = (kicker, title, sub, onPlay) => {
-    const t = G.$(`<div class="card" style="left:560px;top:300px;width:800px;padding:46px 56px;text-align:center">
+    const t = G.$(`<div class="card" style="left:${G.P(560, 90)}px;top:${G.P(300, 560)}px;width:${G.P(800, 788)}px;padding:46px 56px;text-align:center">
       <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${kicker}</div>
       <div style="font:72px/1.05 'Archivo Black';margin:14px 0 10px">${title}</div>
       <div style="font:30px/1.35 'Special Elite'">${sub}</div></div>`);
     const b = G.button('Tap to play ▸', 790, 690, async () => { await G.audio(); G.music('loop.wav'); t.remove(); b.remove(); onPlay(); }, true);
+    if (G.PORT) G.place(b, G.cx(b), 560 + t.offsetHeight + 60);
     return t;
   };
   // the result card; with `lb` ({title, score, label, higher}) a leaderboard panel sits beside it
   G.result = async ({ kicker, heads, rows, stamp, stampColor = 'var(--mustard)', game, again, back, lb }) => {
     const dim = G.$('<div data-dim style="position:absolute;inset:0;background:rgba(231,221,198,.72);z-index:41"></div>'); dim.style.opacity = 0;
     G.tween(.3, e => dim.style.opacity = e);
-    const L = lb ? 90 : 410, W = lb ? 1030 : 1100;
-    const c = G.$(`<div class="card" style="left:${L}px;top:150px;width:${W}px;padding:40px 50px 30px;box-sizing:border-box">
+    const L = G.P(lb ? 90 : 410, 40), W = G.P(lb ? 1030 : 1100, 1000), T = G.P(150, 130);
+    const c = G.$(`<div class="card" style="left:${L}px;top:${T}px;width:${W}px;padding:40px 50px 30px;box-sizing:border-box">
       <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${kicker}</div>
       <table class="res"><tr><th></th><th>${heads[0]}</th><th>${heads[1]}</th></tr>
       ${rows.map(r => `<tr><td>${r[0]}</td><td class="v old">${r[1]}</td><td class="v">${r[2]}</td></tr>`).join('')}</table></div>`);
     G.sfx('paper', -10); await G.tween(.3, e => G.place(c, 0, 600 * (1 - e), -1));
     const h = c.offsetHeight;
-    await G.stamp(stamp, L + W + 20 - 34 * stamp.length, 70, stampColor, -6, 44);
-    G.button('Play again', L + W / 2 - 330, 150 + h + 40, again);
-    G.button('Back to the board ▸', L + W / 2 - 10, 150 + h + 40, () => { parent.postMessage({ type: 'game-done', game }, '*'); back(); }, true);
-    if (lb) G.lbPanel(game, lb);
+    await G.stamp(stamp, G.PORT ? Math.max(20, G.W - 70 - (44 * stamp.length + 66)) : L + W + 20 - 34 * stamp.length, T - 80, stampColor, -6, 44);   // upright: kept inside the screen
+    const pa = G.button('Play again', L + W / 2 - 330, T + h + 40, again);
+    const bk = G.button('Back to the board ▸', L + W / 2 - 10, T + h + 40, () => { parent.postMessage({ type: 'game-done', game }, '*'); back(); }, true);
+    if (G.PORT) { const gap = 24, w = pa.offsetWidth + gap + bk.offsetWidth, x0 = Math.max(20, Math.round((G.W - w) / 2)); G.place(pa, x0, T + h + 40); G.place(bk, x0 + pa.offsetWidth + gap, T + h + 40); }
+    if (lb) G.lbPanel(game, lb, G.PORT ? T + h + 40 + bk.offsetHeight + 50 : null);
   };
 
   // ---- today's leaderboard: top 5 per game, kept on this screen (localStorage), initials only ----
@@ -230,8 +245,8 @@
     save(game, rows) { G.lb.mem[game] = rows; try { localStorage.setItem('booth01-lb-' + game, JSON.stringify({ day: G.lb.day(), rows })); } catch (e) {} },
     place(rows, score, higher) { let i = rows.findIndex(r => higher ? score > r.score : score < r.score); if (i < 0) i = rows.length; return i < 5 ? i : -1; },
   };
-  G.lbPanel = (game, lb) => {
-    const p = G.$('<div class="card lbp"></div>'); G.place(p, 0, 0, 1);
+  G.lbPanel = (game, lb, top) => {
+    const p = G.$('<div class="card lbp"></div>'); G.place(p, 0, 0, 1); if (top != null) p.style.top = top + 'px';   // portrait: under the result card
     const head = `<div class="lbk">TODAY'S TOP 5 · ${lb.title}</div>`;
     const list = hi => {
       const rows = G.lb.load(game);

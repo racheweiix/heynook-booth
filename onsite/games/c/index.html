@@ -60,6 +60,14 @@
 .pvc{position:absolute;left:0;top:0;width:208px;height:325px;transform-origin:0 0;border-radius:12px;overflow:hidden;box-shadow:0 0 0 3px #fff,0 8px 12px rgba(40,28,10,.22);z-index:22}
 .conf{position:absolute;left:0;top:0;width:18px;height:18px;z-index:21;box-shadow:0 0 0 3px #fff}
 #flash{position:absolute;inset:0;background:#fff;z-index:70;opacity:0;pointer-events:none}
+/* portrait (a phone held upright): the desk or the kiosk table in the middle, the queue on a row below, the list on top */
+.port #desk{top:1080px}
+.port #table{left:10px;top:800px;width:1060px}
+.port #laptop{top:900px}
+.port #list{left:130px;top:300px}
+.port .say.r:after{left:auto;right:34px}
+.port #stage .news:nth-child(2){left:600px!important;top:1190px!important;width:440px!important;height:230px!important}
+.port #stage .news:nth-child(3){left:30px!important;top:330px!important;width:420px!important;height:220px!important}
 </style>
 </head>
 <body>
@@ -94,17 +102,25 @@ const PEOPLE = [
 let RUN = 0, Q = [], made = 0, over = false, overP, endRound, arrivals, watch, stats = [], hud = {}, mode = 'desk';
 
 // ---------- people and the queue ----------
-const D = { x: 900, floor: 1020 };                          // where the guest stands at the desk
+const D = { x: 900, floor: G.P(1020, 1330) };              // where the guest stands at the desk
 const QX = () => mode === 'desk' ? D.x : 1420;              // where the queue starts
 const FLOOR = () => mode === 'desk' ? D.floor : 1070;
-function newGuest(fromX = 2060) {
+// portrait: the queue is a row along the bottom, starting on the right and growing to the left (the guest being served
+// stands at the desk above it); new guests walk in from the right
+const PQ = { x0: 960, floor: 1700 }, KF = G.P(1070, 1118);  // KF: where a guest stands at a kiosk
+function posOf(i, n) {
+  if (!G.PORT) { const span = mode === 'desk' ? 960 : 470, gap = Math.min(mode === 'desk' ? 140 : 110, span / Math.max(1, n - 1)); return { x: QX() + i * gap, y: FLOOR() }; }
+  const lead = mode === 'desk' ? 1 : 0, k = i - lead;
+  if (k < 0) return { x: D.x, y: D.floor };
+  return { x: PQ.x0 - k * Math.min(mode === 'desk' ? 140 : 110, 880 / Math.max(1, n - lead - 1)), y: PQ.floor };
+}
+function newGuest(fromX = G.P(2060, G.W + 120), fromY = G.P(FLOOR(), PQ.floor)) {
   const i = made++, g = G.person({ ...G.look(i + 3), s: S }, crowd);
   g._names = PEOPLE[i % PEOPLE.length]; g._name = g._names[0];
-  G.at(g, fromX, FLOOR()); Q.push(g); layout(); return g;
+  G.at(g, fromX, fromY); Q.push(g); layout(); return g;
 }
 function layout() {
-  const span = mode === 'desk' ? 960 : 470, gap = Math.min(mode === 'desk' ? 140 : 110, span / Math.max(1, Q.length - 1));
-  Q.forEach((g, i) => { g.style.zIndex = 100 - i; const x = QX() + i * gap; if (Math.abs(g._x - x) > 2 || Math.abs(g._y - FLOOR()) > 2) g._arrive = G.walk(g, x, FLOOR(), 520); });
+  Q.forEach((g, i) => { g.style.zIndex = 100 - i; const p = posOf(i, Q.length); if (Math.abs(g._x - p.x) > 2 || Math.abs(g._y - p.y) > 2) g._arrive = G.walk(g, p.x, p.y, 520); });
   setHud();
 }
 function setHud() {
@@ -114,7 +130,9 @@ function setHud() {
 }
 function makeHud() {
   hud = { done: 0, t0: performance.now(), d: $('<div class="hud"></div>'), q: $('<div class="hud"></div>'), p: $('<div class="hud"></div>') };
-  place(hud.d, 1430, 22, -1); place(hud.q, 1430, 84, 1); place(hud.p, 1430, 146, -.5); setHud();
+  if (G.PORT) { place(hud.d, 60, 175, -1); place(hud.q, 330, 175, 1); place(hud.p, 530, 175, -.5); }   // portrait: a row under the instruction
+  else { place(hud.d, 1430, 22, -1); place(hud.q, 1430, 84, 1); place(hud.p, 1430, 146, -.5); }
+  setHud();
 }
 const chest = g => ({ x: g._x, y: g._y - 158 * g._s });
 function badgeOn(g) {
@@ -134,7 +152,11 @@ async function printTo(g, sx, sy, w = 112, h = 150) {
 }
 
 // ---------- round 1: a staffed desk ----------
-function say(g, text) { const s = $(`<div class="say">${text}</div>`); place(s, g._x + 56, g._y - 420 * g._s - 4, -1.5); sfx('pop', -16); return s; }
+function say(g, text) {
+  const s = $(`<div class="say">${text}</div>`); place(s, g._x + 56, g._y - 420 * g._s - 4, -1.5);
+  if (G.PORT) { s.classList.add('r'); place(s, g._x + 60 - s.offsetWidth, g._y - 420 * g._s - 70, -1.5); }   // portrait: to the left of the head, tail on the right
+  sfx('pop', -16); return s;
+}
 function findName(g) {                // the desk looks the guest up in a list of look-alike names
   return new Promise(res => {
     const rows = g._names.slice().sort();
@@ -156,13 +178,14 @@ async function deskRound() {
   document.getElementById('desk').style.display = ''; document.getElementById('table').style.display = 'none'; crowd.style.zIndex = 10;
   scene.innerHTML = '';
   $(`<div id="laptop"><div class="lid"><i></i></div><div class="base"></div></div>`, scene);
-  const pr = $(`<img class="printer cut" src="${IMG}printer-badge.png" alt="" style="width:430px">`, scene); place(pr, 330, 396);
+  const pr = $(`<img class="printer cut" src="${IMG}printer-badge.png" alt="" style="width:430px">`, scene); place(pr, 330, G.P(396, 706));
   Q.forEach(g => g.remove()); Q = []; made = 0;
-  for (let i = 0; i < 6; i++) { const g = newGuest(D.x + 140 * i + 40); G.at(g, D.x + 140 * i, D.floor); }
+  if (G.PORT) for (let i = 0; i < 6; i++) { const p = posOf(i, 6), g = newGuest(p.x + 40, p.y); G.at(g, p.x, p.y); }
+  else for (let i = 0; i < 6; i++) { const g = newGuest(D.x + 140 * i + 40); G.at(g, D.x + 140 * i, D.floor); }
   layout(); makeHud();
   const s = await strip('The old way: one desk. Find each guest by name.', 90, 40, { rot: -1 }); if (run !== RUN) return;
   overP = new Promise(r => endRound = r);
-  hud.t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
+  hud.t0 = performance.now(); watch = G.watch(ROUND, G.P(1730, 880), G.P(22, 150), () => { over = true; endRound(); });
   arrivals = setInterval(() => { if (Q.length < 18) newGuest(); }, EVERY);
   IDLE.arm();                                              // the instruction stays up for the whole round
   let wrong = 0;
@@ -174,7 +197,7 @@ async function deskRound() {
     if (r === null) { findName.cancel(); break; }
     wrong += g._wrong || 0;
     hud.done++; Q.shift(); layout();
-    await printTo(g, 604, 674, 112, 150);                   // one desk: print, hand it over, then the next guest
+    await printTo(g, 604, G.P(674, 984), 112, 150);         // one desk: print, hand it over, then the next guest
     G.walk(g, -160, D.floor, 560).then(() => g.remove());
   }
   if (run !== RUN) return;
@@ -185,6 +208,7 @@ async function deskRound() {
 
 // ---------- round 2: three self check-in kiosks ----------
 const KS = .36, KQ = [[54, 177], [273, 40], [551, 488], [387, 716]], KSLOT = [745, 515];
+const KX = G.P([40, 450, 860], [20, 380, 740]), KY = G.P(418, 466);   // the three kiosks on the table (portrait: across the full width)
 function homography(el, w, h, P) {   // map a w×h element onto the four corners P (TL, TR, BR, BL)
   const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = P;
   const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3, dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, den = dx1 * dy2 - dx2 * dy1;
@@ -220,13 +244,14 @@ async function kioskRound() {
   const run = RUN; mode = 'kiosk'; over = false;
   document.getElementById('desk').style.display = 'none'; document.getElementById('table').style.display = 'block'; crowd.style.zIndex = 16;
   scene.innerHTML = '';
-  const K = [40, 450, 860].map(x => { const k = kiosk(x, 418, KS); k._g = null; k._busy = false; return k; });
+  const K = KX.map(x => { const k = kiosk(x, KY, KS); k._g = null; k._busy = false; return k; });
   Q.forEach(g => g.remove()); Q = []; made = 0;
-  for (let i = 0; i < 6; i++) { const g = newGuest(1420 + 94 * i + 40); G.at(g, 1420 + 94 * i, 1070); }
+  if (G.PORT) for (let i = 0; i < 6; i++) { const p = posOf(i, 6), g = newGuest(p.x + 40, p.y); G.at(g, p.x, p.y); }
+  else for (let i = 0; i < 6; i++) { const g = newGuest(1420 + 94 * i + 40); G.at(g, 1420 + 94 * i, 1070); }
   layout(); makeHud();
   const s = await strip('Kiosks! Tap the orange circle to scan each guest.', 90, 40, { rot: -1 }); if (run !== RUN) return;
   overP = new Promise(r => endRound = r);
-  hud.t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
+  hud.t0 = performance.now(); watch = G.watch(ROUND, G.P(1730, 880), G.P(22, 150), () => { over = true; endRound(); });
   arrivals = setInterval(() => { if (Q.length < 18) newGuest(); }, EVERY);
   IDLE.arm();                                              // the instruction stays up for the whole round
   // the front of the queue walks to any free kiosk
@@ -234,7 +259,7 @@ async function kioskRound() {
     K.forEach(k => {
       if (k._g || over || !Q.length) return;
       const g = Q.shift(); k._g = g; layout(); g.style.zIndex = 120;
-      G.walk(g, k._x + 160, 1070, 700).then(() => { if (k._g !== g || over) return; k._ring = ringOn(k, KQ); k._qr = $('<div class="qrb"></div>'); place(k._qr, g._x - 96, g._y - 230, -14); sfx('pop', -16); k._ready = true; });
+      G.walk(g, k._x + 160, KF, 700).then(() => { if (k._g !== g || over) return; k._ring = ringOn(k, KQ); k._qr = $('<div class="qrb"></div>'); place(k._qr, g._x - 96, g._y - 230, -14); sfx('pop', -16); k._ready = true; });
     });
   };
   const loop = setInterval(() => { if (run !== RUN) return clearInterval(loop); feed(); }, 150);
@@ -244,7 +269,7 @@ async function kioskRound() {
     G.beep(); k.show(UI.ok(g._name));
     await printTo(g, k._x + KSLOT[0] * KS, k._y + KSLOT[1] * KS, 76, 104);
     hud.done++; setHud();
-    G.walk(g, g._x + 40, 1500, 700).then(() => g.remove());
+    G.walk(g, g._x + 40, G.P(1500, G.H + 420), 700).then(() => g.remove());
     k.show(UI.welcome()); k._g = null; k._busy = false;
   });
   await overP; clearInterval(loop); if (run !== RUN) return;
@@ -258,12 +283,14 @@ async function kioskRound() {
 // ---------- the PVC kiosk: the guest snaps their own headshot ----------
 async function pvcBeat(run) {
   scene.innerHTML = ''; crowd.innerHTML = '';
-  const k = kiosk(240, 236, 1.0, true);
-  const pr = $(`<img class="printer cut" src="${IMG}printer-pvc.png" alt="" style="width:380px">`, scene); place(pr, 680, 768 - 468);
+  const dy = G.P(0, 380), PX = 680, PY = 300 + dy;          // portrait: the same scene, lower down, so the card can pop up above it
+  if (G.PORT) document.getElementById('table').style.top = (752 + dy) + 'px';   // ...standing on the table, as in landscape
+  const k = kiosk(240, 236 + dy, 1.0, true);
+  const pr = $(`<img class="printer cut" src="${IMG}printer-pvc.png" alt="" style="width:380px">`, scene); place(pr, PX, PY);
   const look = { skin: '#C68E6A', shirt: '#6F7255', hair: 'hijab', hairC: '#4F6B6A' }, name = 'Siti Rahman';
-  const g = G.person({ ...look, s: .84 }, crowd); G.at(g, 2080, 1070);
+  const g = G.person({ ...look, s: .84 }, crowd); G.at(g, G.P(2080, G.W + 120), 1070 + dy);
   const s = await strip('Printing PVC? Guests snap their own headshot.', 90, 40, { rot: .6 }); if (run !== RUN) return;
-  await G.walk(g, 470, 1070, 760); if (run !== RUN) return;
+  await G.walk(g, 470, 1070 + dy, 760); if (run !== RUN) return;
   k.show(UI.photo()); sfx('pop', -14);
   const TQ = [[39, 108], [164, 29], [325, 287], [231, 419]];
   const tapped = () => new Promise(res => { k._tap = () => { k._tap = null; res(); }; });
@@ -277,17 +304,17 @@ async function pvcBeat(run) {
   r.remove(); G.beep(); k.show(UI.ok(name));
   // the Primacy prints her card: her design, her new headshot
   G.whirr(1.0, -14);
-  await tween(1.0, (e, q) => pr.style.transform = `translate(${680 + Math.sin(q * 60) * 2}px,${300 + Math.cos(q * 47) * 1.5}px)`, 'linear');
-  pr.style.transform = 'translate(680px,300px)';
-  const OUT = { x: 680 + 390 * 380 / 1029, y: 300 + 1010 * 380 / 1029 };
+  await tween(1.0, (e, q) => pr.style.transform = `translate(${PX + Math.sin(q * 60) * 2}px,${PY + Math.cos(q * 47) * 1.5}px)`, 'linear');
+  pr.style.transform = `translate(${PX}px,${PY}px)`;
+  const OUT = { x: PX + 390 * 380 / 1029, y: PY + 1010 * 380 / 1029 }, TO = G.P({ x: 1230, y: 180 }, { x: 760, y: 150 });
   const c = $(`<div class="pvc">${G.cardHTML({ name, title: 'Reporter', co: 'The Daily Byte', look, photo: true }, 'MEDIA', true)}</div>`, scene);
   for (let i = 0; i < 12; i++) {
     const t = G.TH.MEDIA, q = $(`<div class="conf" style="background:${[t.a, t.b, t.c, t.d][i % 4]}"></div>`, scene), a = -Math.PI * (.15 + .7 * i / 11), rr = 140 + G.rnd() * 90;
     tween(.5, e => { place(q, OUT.x + Math.cos(a) * rr * e, OUT.y + Math.sin(a) * rr * e + 160 * e * e, 200 * e, 1 - .4 * e); q.style.opacity = 1 - e * e; }, 'out').then(() => q.remove());
   }
   sfx('sparkle', -10); sfx('pop', -10);
-  await tween(.45, e => place(c, OUT.x - 30 + (1230 - OUT.x + 30) * e, OUT.y - 20 + (180 - OUT.y + 20) * e - Math.sin(e * Math.PI) * 100, 4 * e, .3 + 1.0 * e), 'inout');
-  await stamp('HEADSHOT ON THE SPOT', 860, 650, 'var(--mustard)', -6);
+  await tween(.45, e => place(c, OUT.x - 30 + (TO.x - OUT.x + 30) * e, OUT.y - 20 + (TO.y - OUT.y + 20) * e - Math.sin(e * Math.PI) * 100, 4 * e, .3 + 1.0 * e), 'inout');
+  await stamp('HEADSHOT ON THE SPOT', G.P(860, 70), G.P(650, 1540), 'var(--mustard)', -6);
   await wait(2200); if (run !== RUN) return;
   await unstrip(s);
 }
@@ -322,8 +349,9 @@ function start() {
   G.stage.querySelectorAll('.strip,.stamp,.btn,.card,.hud,.watch,.feed,#list,.say,.qrb,.tapme,.pvc,[data-dim]').forEach(e => e.remove());
   crowd.innerHTML = ''; scene.innerHTML = ''; Q = []; made = 0; hud = {};
   document.getElementById('desk').style.display = 'none'; document.getElementById('table').style.display = 'block'; crowd.style.zIndex = 16;
-  [40, 450, 860].forEach(x => kiosk(x, 418, KS));
-  for (let i = 0; i < 5; i++) { const g = G.person({ ...G.look(i + 3), s: S }, crowd); G.at(g, 1420 + 100 * i, 1070); g.style.zIndex = 100 - i; }
+  document.getElementById('table').style.top = '';          // back from the PVC scene's lower table (portrait)
+  KX.forEach(x => kiosk(x, KY, KS));
+  for (let i = 0; i < 5; i++) { const g = G.person({ ...G.look(i + 3), s: S }, crowd); G.at(g, G.P(1420 + 100 * i, PQ.x0 - 110 * i), G.P(1070, PQ.floor)); g.style.zIndex = 100 - i; }
   G.titleCard('MINI GAME C · SELF CHECK-IN KIOSK', 'Rush Hour', 'Check in the queue before it grows.<br>First at a staffed desk, then at the kiosks.', () => { crowd.innerHTML = ''; play(); });
 }
 start();

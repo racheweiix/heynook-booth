@@ -23,7 +23,8 @@
   -webkit-mask:radial-gradient(circle 12px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 12px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat}
 .hint .ht{font:32px/1.35 'Special Elite';margin-top:18px}.hint .ht b{font:400 34px 'Archivo Black'}
 .hint .hk{font:400 26px 'Archivo Black';margin-top:10px}
-.turned .pup{will-change:transform}   /* turned on a phone: the swaying crowd moves as layers instead of repainting (WebKit: 126 -> 43 ms CPU/s) */
+.port #marks{width:1080px;height:1920px}
+.turned .pup,.port .pup{will-change:transform}   /* on a phone (turned or upright): the swaying crowd moves as layers instead of repainting (WebKit: 126 -> 43 ms CPU/s) */
 .sw{display:inline-block;font-family:'Archivo Black';font-weight:400;background:#15171D;color:#F5F5F2;padding:1px 12px 5px;border-radius:8px;line-height:1.1}.sw.gold{color:#E3BF63}
 .key{position:absolute;left:0;top:0;z-index:31;display:flex;gap:18px;background:var(--strip);padding:10px 16px;box-shadow:0 6px 10px rgba(40,28,10,.18);font:22px 'Special Elite'}
 .key span{display:flex;align-items:center;gap:8px}.key i{font:800 18px Inter;font-style:normal;padding:4px 8px;border-radius:5px}
@@ -43,11 +44,24 @@
 <script>
 const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
 const crowd = document.getElementById('crowd'), marks = document.getElementById('marks');
+if (G.PORT) {                                                     // upright phone: the stage stands up; decor and the marks layer follow
+  marks.setAttribute('viewBox', '0 0 1080 1920');
+  const nw = document.querySelectorAll('.news'); [[600, 130, 440, 200, 3], [40, 1720, 460, 170, -3]].forEach(([l, t, w, h, r], i) => Object.assign(nw[i].style, { left: l + 'px', top: t + 'px', width: w + 'px', height: h + 'px', transform: `rotate(${r}deg)` }));
+}
 const ROUND = 10;
 // two rows of big people (the back row stands in the gaps of the front row), so every badge can be read
 const SLOTS = [];
-[260, 540, 820, 1100, 1380, 1660].forEach(x => SLOTS.push({ x, y: 800, s: .86 }));
-[120, 400, 680, 960, 1240, 1520, 1800].forEach(x => SLOTS.push({ x, y: 1080, s: 1.04 }));
+if (!G.PORT) {
+  [260, 540, 820, 1100, 1380, 1660].forEach(x => SLOTS.push({ x, y: 800, s: .86 }));
+  [120, 400, 680, 960, 1240, 1520, 1800].forEach(x => SLOTS.push({ x, y: 1080, s: 1.04 }));
+} else {                                                          // upright: four staggered rows (4, 3, 4, 2), bigger, so the badges read on a phone
+  [135, 405, 675, 945].forEach(x => SLOTS.push({ x, y: 860, s: 1.05 }));
+  [270, 540, 810].forEach(x => SLOTS.push({ x, y: 1130, s: 1.12 }));
+  [135, 405, 675, 945].forEach(x => SLOTS.push({ x, y: 1400, s: 1.19 }));
+  [270, 810].forEach(x => SLOTS.push({ x, y: 1670, s: 1.26 }));
+}
+// where the round's pieces sit: [x, y] landscape / upright
+const AT = { strip: G.P([90, 40], [40, 30]), hud: G.P([1430, 40], [40, 168]), watch: G.P([1730, 22], [892, 160]), key: G.P([1130, 106], [40, 248]) };
 const NAMES = ['PRIYA N.', 'AHMAD T.', 'SARAH L.', 'WEI JIE K.', 'NURUL A.', 'BEN O.', 'GRACE T.', 'RAVI S.', 'MEI LING C.', 'DANIEL W.', 'AISHA R.', 'KENJI M.', 'HUI MIN L.'];
 const COS = ['Pixelwork Labs', 'Nexora', 'Brightwave', 'Harbour & Co', 'Kite Studio', 'Lumen Bank'];
 const ROLE = i => [2, 5, 8, 11].includes(i) ? 'SPEAKER' : [0, 6, 10].includes(i) ? 'VIP' : 'DELEGATE';
@@ -132,12 +146,12 @@ function hint(colour) {
           <div class="ht">Speakers now wear <b>black badges</b> with <span class="sw">white text</span>.<br>Tap those. Skip the white badges and the <span class="sw gold">gold text</span> VIPs.</div>`
       : `<div style="display:flex;gap:44px;align-items:center;justify-content:center">${exampleBadge('SPEAKER', 'plain')}
           <div class="ht" style="text-align:left;margin:0">Find the <b>${NSP} speakers</b>.<br>Their badge says <b>SPEAKER</b>.<br>You have 10 seconds.</div></div>`;
-    const c = $(`<div class="card hint" style="left:410px;top:120px;width:1100px;padding:34px 40px 30px;box-sizing:border-box;text-align:center">
+    const c = $(`<div class="card hint" style="left:${G.P(410, 40)}px;top:${G.P(120, 330)}px;width:${G.P(1100, 1000)}px;padding:34px 40px 30px;box-sizing:border-box;text-align:center">
       <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${colour ? 'ROUND 2 · GOLD &amp; WHITE TEXT' : 'ROUND 1 · BLACK TEXT ONLY'}</div>${body}</div>`);
     sfx('paper', -10); tween(.3, e => place(c, 0, 500 * (1 - e), -.5));
     IDLE.arm();
     const b = button('Start ▸', 860, 120 + 34 + (colour ? 560 : 420), () => { IDLE.disarm(); dim.remove(); c.remove(); b.remove(); res(); }, true);
-    b.style.zIndex = 46;
+    b.style.zIndex = 46; if (G.PORT) place(b, G.cx(b), 330 + c.offsetHeight + 50);
   });
 }
 
@@ -147,12 +161,12 @@ async function round(colour) {
   P.forEach(p => { p._found = false; G.mood(p, null); });
   dress(colour); arrange(shuffled()); startSway();
   await hint(colour); if (run !== RUN) return;
-  const s = await strip(colour ? 'Tap the speakers: black badges, white text!' : `Find the ${NSP} speakers. Tap them!`, 90, 40, { rot: -1 });
+  const s = await strip(colour ? 'Tap the speakers: black badges, white text!' : `Find the ${NSP} speakers. Tap them!`, AT.strip[0], AT.strip[1], { rot: -1 });
   if (run !== RUN) return;
-  hud = $('<div class="hud"></div>'); place(hud, 1430, 40, -1); setHud();
-  if (colour) { key = $(`<div class="key"><span><i style="background:#15171D;color:#F5F5F2">white text</i>= Speaker</span><span><i style="background:#15171D;color:#E3BF63">gold text</i>= VIP</span></div>`); place(key, 1130, 106, 1); }
+  hud = $('<div class="hud"></div>'); place(hud, AT.hud[0], AT.hud[1], -1); setHud();
+  if (colour) { key = $(`<div class="key"><span><i style="background:#15171D;color:#F5F5F2">white text</i>= Speaker</span><span><i style="background:#15171D;color:#E3BF63">gold text</i>= VIP</span></div>`); place(key, AT.key[0], AT.key[1], 1); }
   const done = new Promise(r => endRound = r);
-  t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
+  t0 = performance.now(); watch = G.watch(ROUND, AT.watch[0], AT.watch[1], () => { over = true; endRound(); });
   IDLE.arm();
   await done; if (run !== RUN) return;
   const time = (performance.now() - t0) / 1000; watch.stop(); IDLE.disarm(); if (key) { key.remove(); key = null; }
@@ -165,7 +179,7 @@ async function play() {
   // show the ones that were missed
   const missed = P.filter(p => p._role === 'SPEAKER' && !p._found), tags = [];
   missed.forEach((p, i) => setTimeout(() => { ring(p, '#C8321E', true); tags.push(label(p, 'missed', '#C8321E')); sfx('pop', -18); }, i * 160));
-  const s = await strip(found === NSP ? `All ${NSP}! It took ${stats[0].time}.` : `You found ${found} of ${NSP}. Every badge looks the same.`, 90, 40, { rot: .6 });
+  const s = await strip(found === NSP ? `All ${NSP}! It took ${stats[0].time}.` : `You found ${found} of ${NSP}. Every badge looks the same.`, AT.strip[0], AT.strip[1], { rot: .6 });
   await wait(2200); if (run !== RUN) return;
   await wipe(async () => { s.remove(); tags.forEach(t => t.remove()); watch.el.remove(); hud.remove(); hud = null; marks.innerHTML = ''; });
   run = await round(true); if (run !== RUN) return;
@@ -175,7 +189,7 @@ async function play() {
 async function keepsake(run) {
   sway = 0;
   const p = lastFound || P.find(q => q._role === 'SPEAKER'), sl = p._sl;
-  const s = await strip(stats[1].found === NSP ? `All ${NSP} in ${stats[1].time}. They stand out.` : `${stats[1].found} of ${NSP}. White on black is hard to miss.`, 90, 40, { rot: -.6 });
+  const s = await strip(stats[1].found === NSP ? `All ${NSP} in ${stats[1].time}. They stand out.` : `${stats[1].found} of ${NSP}. White on black is hard to miss.`, AT.strip[0], AT.strip[1], { rot: -.6 });
   await wait(1400); if (run !== RUN) return;
   const dim = $('<div data-dim style="position:absolute;inset:0;background:rgba(231,221,198,.8);z-index:41"></div>'); dim.style.opacity = 0;
   tween(.3, e => dim.style.opacity = e);
@@ -185,16 +199,17 @@ async function keepsake(run) {
     <div class="note" style="left:720px;top:480px;font-size:28px;transform:rotate(-2deg)">white on black ✦<br>gold on black</div>
     <img src="../assets/img/badge-gold.png" alt="" style="position:absolute;left:50px;top:90px;width:300px;transform:rotate(-7deg);filter:drop-shadow(0 10px 10px rgba(40,28,10,.3))">
     <i class="tape" style="left:40px;top:84px;transform:rotate(-34deg)"></i><i class="tape" style="left:250px;top:560px;transform:rotate(-20deg)"></i></div>`);
-  place(book, 440, 1200, -2); sfx('paper', -8);
-  await tween(.36, e => place(book, 440, 1200 - 1020 * e, -2), 'out');
+  const BK = G.P({ x: 440, y: 180, y0: 1200 }, { x: 20, y: 520, y0: 2020 }), dx = BK.x - 440, dy = BK.y - 180;   // upright: the scrapbook sits mid-screen
+  place(book, BK.x, BK.y0, -2); sfx('paper', -8);
+  await tween(.36, e => place(book, BK.x, BK.y0 - (BK.y0 - BK.y) * e, -2), 'out');
   // the badge leaves the speaker and becomes the real thing: white text on a black badge
   const real = $('<img id="real" src="../assets/img/badge-white.png" alt="">');
   const bx = sl.x - 165, by = sl.y - 158 * sl.s - 213;
   place(real, bx, by, 0, .2); sfx('whoosh-short', -12);
-  await tween(.5, e => place(real, bx + (780 - bx) * e, by + (250 - by) * e - Math.sin(e * Math.PI) * 120, 5 * e, .2 + .8 * e), 'inout');
+  await tween(.5, e => place(real, bx + (780 + dx - bx) * e, by + (250 + dy - by) * e - Math.sin(e * Math.PI) * 120, 5 * e, .2 + .8 * e), 'inout');
   sfx('sparkle', -8);
-  const tapes = [[1030, 250, 34], [790, 640, -24]].map(([x, y, r]) => { const t = $('<i class="tape" style="z-index:44"></i>'); place(t, x, y, r); sfx('paper', -14); return t; });
-  await stamp('WORTH KEEPING', 1060, 800, 'var(--mustard)', -7, 45);
+  const tapes = [[1030, 250, 34], [790, 640, -24]].map(([x, y, r]) => { const t = $('<i class="tape" style="z-index:44"></i>'); place(t, x + dx, y + dy, r); sfx('paper', -14); return t; });
+  await stamp('WORTH KEEPING', G.P(1060, 420), G.P(800, 1150), 'var(--mustard)', -7, 45);
   await wait(2600); if (run !== RUN) return;
   await unstrip(s);
   [book, real, dim, ...tapes].forEach(e => e.remove()); document.querySelectorAll('.stamp').forEach(e => e.remove());
