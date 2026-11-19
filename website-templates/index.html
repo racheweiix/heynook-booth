@@ -62,6 +62,7 @@ body:not(.is-grid) main { flex: 1 1 auto; display: flex; flex-direction: column;
 .page::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 70%, rgba(11,6,48,.35)); pointer-events: none; }
 .reflect { position: absolute; left: 0; right: 0; top: 100%; height: 40%; margin-top: 14px; border-radius: 22px;
   background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 35%, transparent 70%); backface-visibility: hidden; }
+.ring.tall .reflect { height: 14%; }
 .label { position: absolute; z-index: 3; left: 50%; bottom: 56px; height: 64px; transform: translateX(-50%); text-align: center; display: grid; align-content: start; gap: 4px; pointer-events: none; width: min(560px, calc(100% - 32px)); }
 .label b { font-size: 22px; line-height: 1.3; letter-spacing: -.01em; }
 .label span { color: var(--mute); font-size: 15px; line-height: 1.45; }
@@ -167,23 +168,37 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
   if (inApp) document.documentElement.classList.add("inapp");
   if (window.matchMedia("(pointer: coarse)").matches) hint.textContent = "Swipe to spin · tap to open";
 
+  var GROW = 1.38, SITEW = 1280;
   function sizes() {
-    var vw = window.innerWidth, phone = vw < 640, grow = phone ? 1.1 : 1.38;
+    var vw = window.innerWidth, phone = vw < 640;
     if (!stage.clientHeight) return;   // the ring is hidden (grid view); it is measured again when shown
     // the ring sits in the middle of the space between the top of the stage and the label, and the grown
     // front page always fits in that space (so it is on screen straight away, whatever the screen height)
     var top = phone ? 34 : 24, bottom = (label.offsetTop || stage.clientHeight - 120) - 14, room = Math.max(160, bottom - top);
     var mid = Math.round(top + room / 2);
     ring.style.top = mid + "px"; navs.style.top = (mid - 24) + "px";
-    W = phone ? Math.min(300, vw - 64) : Math.min(560, Math.round(vw * 0.4));
-    W = Math.max(180, Math.min(W, Math.floor(room / grow * 0.96 / 0.625)));
-    H = Math.round(W * 0.625); SCALE = (W - 12) / 1280;
-    R = Math.round((W + (phone ? 40 : 90)) / (2 * Math.tan(Math.PI / N)));
+    // A tall, narrow stage (a phone, or the 512px column NookPass gives an iPad) gets upright pages showing each site's
+    // phone layout, big enough to read at a glance; a wide stage gets landscape pages with the desktop layout.
+    var tall = stage.clientHeight > vw * 1.15;
+    ring.classList.toggle("tall", tall);
+    GROW = phone || tall ? 1.1 : 1.38;
+    if (tall) {
+      SITEW = 390;
+      W = Math.max(150, Math.min(Math.round(vw * 0.7), 440, Math.floor(room / GROW * 0.96 / 1.7)));
+      H = Math.round(W * 1.7);
+    } else {
+      SITEW = 1280;
+      W = phone ? Math.min(560, vw - 64) : Math.min(560, Math.round(vw * 0.4));
+      W = Math.max(180, Math.min(W, Math.floor(room / GROW * 0.96 / 0.625)));
+      H = Math.round(W * 0.625);
+    }
+    SCALE = (W - 12) / SITEW;
+    R = Math.round((W + (phone || tall ? 40 : 90)) / (2 * Math.tan(Math.PI / N)));
     ring.style.setProperty("--w", W + "px"); ring.style.setProperty("--h", H + "px");
     VIEWH = Math.ceil((H - 12) / SCALE) + 2;
     panels.forEach(function (p, i) {
       p.el.style.transform = "rotateY(" + (i * 360 / N) + "deg) translateZ(" + R + "px)";
-      p.frame.style.transform = "scale(" + SCALE + ")"; p.frame.style.height = VIEWH + "px"; p.travel = -1;
+      p.frame.style.transform = "scale(" + SCALE + ")"; p.frame.style.width = SITEW + "px"; p.frame.style.height = VIEWH + "px"; p.travel = -1;
     });
   }
 
@@ -253,7 +268,15 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
     var dt = Math.min(50, t - t0); t0 = t;
     if (!body.classList.contains("is-grid") && !viewer.classList.contains("open")) {
       if (snapTo !== null) { var target = -snapTo * 360 / N; angle += (target - angle) * 0.12; if (Math.abs(target - angle) < 0.05) { angle = target; snapTo = null; } vel = 0; }
-      else if (!dragging) { vel *= 0.94; idle += dt; angle += vel + (idle > 1200 ? auto * dt / 16 : 0); }
+      else if (!dragging) {
+        // idle: settle centred on the nearest template, hold it ~5s while it scrolls itself, then turn to the next
+        vel *= 0.94; idle += dt; angle += vel;
+        if (Math.abs(vel) < 0.05) {
+          var off = Math.abs(angle - Math.round(angle / (360 / N)) * (360 / N));
+          if (off > 0.3 && idle > 500) step(0);
+          else if (auto && idle > 5000) step(1);
+        }
+      }
       ring.style.transform = "translateZ(" + (-R) + "px) rotateY(" + angle + "deg)";
       // the front panel = smallest angular distance to 0
       var best = 0, bd = 999;
@@ -266,7 +289,7 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
         if (P.vis !== vis) { P.vis = vis; P.y = -1; P.el.style.visibility = vis; P.frame.style.display = vis ? "none" : ""; }   // pages behind the ring stop drawing
         if (!panels[i].frame.srcdoc && !panels[i].queued && Math.abs(a) < 80) { panels[i].queued = 1; queue.push(panels[i].frame); if (Math.abs(a) < 35) queue.unshift(queue.pop()); }
         // grow as it reaches the front, shrink as it moves away
-        var grow = 1 + (window.innerWidth < 640 ? 0.1 : 0.38) * Math.pow(Math.max(0, near), 6);
+        var grow = 1 + (GROW - 1) * Math.pow(Math.max(0, near), 6);
         panels[i].el.style.transform = "rotateY(" + (i * 360 / N) + "deg) translateZ(" + (R + (grow - 1) * 160).toFixed(1) + "px) scale(" + grow.toFixed(3) + ")";
         var z = Math.round(near * 20); if (P.z !== z) { P.z = z; P.el.style.zIndex = z; }
         if (!reduce && !vis && P.frame.srcdoc) { // each page scrolls itself like a home screen
