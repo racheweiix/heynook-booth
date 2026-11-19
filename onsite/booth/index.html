@@ -103,7 +103,11 @@
 const { $, place, tween, wait, strip, unstrip, stamp, wipe, button, sfx } = G;
 const L = document.getElementById('L'), frame = document.getElementById('game'), IMG = '../games/assets/img/';
 const BEAT = .531;
-if (G.PORT) { const nw = document.querySelectorAll('.news'); [[430, 110, 340, 150, 3], [20, 560, 300, 140, -4]].forEach(([l, t, w, h, r], i) => Object.assign(nw[i].style, { left: l + 'px', top: t + 'px', width: w + 'px', height: h + 'px', transform: `rotate(${r}deg)` })); }
+const NEWS = [...document.querySelectorAll('.news')], NEWS0 = NEWS.map(n => n.style.cssText);   // landscape positions
+function placeNews() {   // upright: the newsprint scraps move into the narrower stage
+  NEWS.forEach((n, i) => { n.style.cssText = NEWS0[i]; if (G.PORT) { const [l, t, w, h, r] = [[430, 110, 340, 150, 3], [20, 560, 300, 140, -4]][i]; Object.assign(n.style, { left: l + 'px', top: t + 'px', width: w + 'px', height: h + 'px', transform: `rotate(${r}deg)` }); } });
+}
+placeNews();
 const PASS = (location.search.match(/[?&](port|land)\b/) || [''])[0].replace('&', '?');   // ?port / ?land (testing) carry on into the games
 const TAGS = [
   { k: 'A', isNew: true, title: 'Table allocation', line: 'Move a guest. Who else finds out?', game: 'a', name: 'Same Page' },
@@ -125,7 +129,7 @@ function ground(y) {   // upright: the torn ground runs down to the bottom of th
 }
 function sun(x, y, r) { const s = $(`<div class="sun" style="width:${r * 2}px;height:${r * 2}px"></div>`, L); place(s, x - r, y - r); return s; }
 function cut(parent, src, x, y, w, r = 0, z = 10) { if (typeof parent === 'string') return cut(L, parent, src, x, y, w, r); const i = $(`<img class="cut cutimg" src="${IMG}${src}" alt="" style="width:${w}px;z-index:${z}">`, parent); place(i, x, y, r); return i; }
-const DROP = G.P(1100, G.H + 300);   // how far above its place a piece waits before it drops in
+let DROP = G.P(1100, G.H + 300);   // how far above its place a piece waits before it drops in
 async function drop(el, x, y, r = 0) { place(el, x, y - DROP, r); await tween(.42, e => place(el, x, y - DROP * (1 - e), r), 'out'); sfx('paper', -10); }
 const bestOf = g => { const rows = G.lb.load(g.toUpperCase()); return rows[0] || null; };
 function clearScreen() {
@@ -168,7 +172,7 @@ const UPRIGHT = () => innerHeight > innerWidth;
 const fsSync = () => fsb.classList.toggle('on', ((fsOK && !fsRefused && !fsOn()) || (PHONE && (G.PORT || G.rot) && UPRIGHT())) && (screen === 'attract' || screen === 'board'));   // never over a game's or video's own buttons
 function swapView() {   // the state rides in the address (storage can be blocked inside NookPass's frame)
   const u = new URL(location.href); if (G.rot) u.searchParams.delete('turn'); else u.searchParams.set('turn', '1');
-  u.searchParams.set('played', [...played].join('') || '-'); u.searchParams.set('at', screen === 'board' ? 'board' : 'start');
+  u.searchParams.set('played', [...played].join('') || '-'); u.searchParams.set('at', screen === 'board' ? 'board' : screen === 'game' && curT ? 'game-' + curT.game : 'start');
   location.replace(u.toString());
 }
 fsb.addEventListener('click', () => {
@@ -391,8 +395,9 @@ async function hero(k, run, step) {          // step 0: lands with the first lin
     }
   }
 }
+let curT = null;   // the chapter or game on screen (to redraw it after a turn, or reopen it after a swap)
 async function chapter(t) {
-  clearScreen(); screen = 'chapter'; fsSync(); armIdle(); const run = RUN;
+  curT = t; clearScreen(); screen = 'chapter'; fsSync(); armIdle(); const run = RUN;
   // upright: the hero (drawn for landscape x 960-1905, y 230-860) is scaled to 0.8 and moved to the top; the lines and buttons sit below
   const ex = G.PORT ? Math.max(0, G.H - 1195) : 0, Ht = 150 + ex * .15, gy = G.P(860, Ht + 504);
   ground(gy);
@@ -419,15 +424,24 @@ function playVideo(t) {
   clearScreen(); screen = 'video'; fsSync(); clearTimeout(idleT); const run = RUN;
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
   vplay.style.display = 'block'; vid.src = t.video; vid.currentTime = 0; vid.play().catch(() => {});
-  const vt = Math.round((G.H - 450) / 2); if (G.PORT) vid.style.top = vt + 'px';   // upright: the 16:9 video across the middle
+  placeVideoUI();
   const back = button('✕ Back', 1660, 26, () => endVideo(t, false)); back.style.zIndex = 46; back.classList.add('vbtn'); back.style.font = "400 26px 'Archivo Black'"; back.style.padding = '14px 22px';
-  if (G.PORT) place(back, G.W - back.offsetWidth - 24, vt - 110);   // upright: just above the video
+  placeVideoUI();
   vid.onended = () => {
     if (run !== RUN) return; played.add(t.k); back.remove(); armIdle(); screen = 'videoEnd'; fsSync();
     const again = button('Watch again', 600, 900, () => { G.stage.querySelectorAll('.vbtn').forEach(b => b.remove()); playVideo(t); }); again.classList.add('vbtn'); again.style.zIndex = 46;
     const bb = button('Back to the board ▸', 960, 900, () => endVideo(t, true), true); bb.classList.add('vbtn'); bb.style.zIndex = 46;
-    if (G.PORT) { place(bb, G.cx(bb), vt + 490); place(again, G.cx(again), vt + 610); }   // upright: under the video
+    placeVideoUI();
   };
+}
+function placeVideoUI() {   // upright: the 16:9 video across the middle, Back above it, the end buttons under it
+  const vt = Math.round((G.H - 450) / 2); vid.style.top = G.PORT ? vt + 'px' : '';
+  G.stage.querySelectorAll('.vbtn').forEach(b => {
+    const k = b.textContent;
+    if (/Back$/.test(k)) place(b, G.P(1660, G.W - b.offsetWidth - 24), G.P(26, vt - 110));
+    else if (/Watch again/.test(k)) place(b, G.P(600, G.cx(b)), G.P(900, vt + 610));
+    else place(b, G.P(960, G.cx(b)), G.P(900, vt + 490));
+  });
 }
 function endVideo(t, watched) {
   if (watched) played.add(t.k);
@@ -439,7 +453,7 @@ function endVideo(t, watched) {
 
 // ---------- a game ----------
 function openGame(t) {
-  screen = 'game'; fsSync(); clearTimeout(idleT); clearInterval(hopT);   // the board sits under the game: stop its highlight hopping
+  curT = t; screen = 'game'; fsSync(); clearTimeout(idleT); clearInterval(hopT);   // the board sits under the game: stop its highlight hopping
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
   frame.src = `../games/${t.game}/${G.rot ? '?turn' : PASS}`; frame.style.display = 'block'; frame.focus();   // a turned booth opens its games turned
 }
@@ -451,6 +465,7 @@ addEventListener('message', e => {
   if (!e.data || screen !== 'game') return;
   if (e.data.type === 'game-done') { played.add(e.data.game); closeGame(); board(); }
   if (e.data.type === 'game-idle') { closeGame(); attract(true); }
+  if (e.data.type === 'swap-view') swapView();                     // the game's own corner button (phones)
 });
 // back from a view swap: same played tags, same screen (sound starts with the first tap, as phones need one)
 const back = new URLSearchParams(location.search);
@@ -458,7 +473,14 @@ if (back.has('at')) {
   (back.get('played') || '').replace(/[^A-E]/g, '').split('').forEach(k => played.add(k));
   addEventListener('pointerup', async () => { if (!G.ac) { await G.audio(); G.music('loop.wav', -18); } }, { once: true });
 }
-back.get('at') === 'board' ? board() : attract();
+const atGame = (back.get('at') || '').match(/^game-([a-z])$/), reopen = atGame && TAGS.find(t => t.game === atGame[1]);
+reopen ? openGame(reopen) : back.get('at') === 'board' ? board() : attract();
+// the device turned (upright <-> landscape): redraw the same screen in the other layout, in place (an iPad keeps its full screen)
+G.onFlip = () => {
+  DROP = G.P(1100, G.H + 300); placeNews(); fsSync();
+  if (screen === 'attract') attract(); else if (screen === 'board') board(); else if (screen === 'chapter' && curT) chapter(curT);
+  else if (screen === 'video' || screen === 'videoEnd') placeVideoUI();
+};
 </script>
 </body>
 </html>

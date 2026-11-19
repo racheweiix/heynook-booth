@@ -9,20 +9,31 @@
   G.rot = /[?&]turn/.test(location.search);
   // G.PORT: a screen taller than it is wide (a phone held upright) gets the portrait stage, 1080x1920: the same pieces at the
   // same size, laid out top to bottom, so nobody has to turn their phone. G.P(landscape, portrait) picks a value.
-  // ?port / ?land force one (for testing). If the screen turns the other way later, the page reloads in the other layout.
+  // ?port / ?land force one (for testing). When the device turns the other way, a page that can re-lay itself out in place
+  // (the booth: G.onFlip) does that, so an iPad stays in full screen; a game simply reloads in the other layout.
   const forced = /[?&](port|land)\b/.test(location.search);
-  G.PORT = /[?&]port\b/.test(location.search) || (!forced && !G.rot && innerHeight > innerWidth);
-  // upright: 800 wide (so everything reads about 35% bigger than a 1080-wide stage would) and as tall as the screen's own
-  // shape (1150-1800), so it fills the frame edge to edge whatever the phone and browser bars
-  const ratio = innerWidth > 0 && innerHeight > 0 ? innerHeight / innerWidth : 1.6;
-  G.W = G.PORT ? 800 : 1920; G.H = G.PORT ? Math.max(1150, Math.min(1800, Math.round(800 * ratio))) : 1080;
-  if (G.PORT) { G.stage.style.width = G.W + 'px'; G.stage.style.height = G.H + 'px'; }
-  G.QR = { x: 600, y: G.H - 165 };   // upright inside NookPass: its round QR button covers x > 600, y > QR.y (keep taps out of there)
+  G.wantH = () => Math.max(1150, Math.min(1800, Math.round(800 * (innerWidth > 0 && innerHeight > 0 ? innerHeight / innerWidth : 1.6))));
+  G.layout = () => {
+    G.PORT = /[?&]port\b/.test(location.search) || (!forced && !G.rot && innerHeight > innerWidth);
+    // upright: 800 wide (so everything reads about 35% bigger than a 1080-wide stage would) and as tall as the screen's own
+    // shape (1150-1800: a phone with or without browser bars), so it fills the frame edge to edge (squatter frames get paper edges)
+    G.W = G.PORT ? 800 : 1920; G.H = G.PORT ? G.wantH() : 1080;
+    G.stage.style.width = G.PORT ? G.W + 'px' : ''; G.stage.style.height = G.PORT ? G.H + 'px' : '';
+    G.QR = { x: 600, y: G.H - 165 };   // upright inside NookPass: its round QR button covers x > 600, y > QR.y (keep taps out of there)
+    document.documentElement.classList.toggle('port', G.PORT);
+  };
+  G.layout();
   G.P = (land, port) => G.PORT ? port : land;
-  document.documentElement.classList.toggle('port', G.PORT);
+  G.onFlip = null;
   let reloading = false;
   G.fit = () => {
-    if (!forced && !G.rot && innerWidth > 0 && innerHeight > 0 && (innerHeight > innerWidth) !== G.PORT && !reloading) { reloading = true; setTimeout(() => location.reload(), 250); return; }
+    // re-lay out when the screen turns, or when an upright screen changes shape a lot (an iPad going full screen from
+    // NookPass's column): the booth in place (a small change is enough), a game only for a big one (it has to reload)
+    const flip = (innerHeight > innerWidth) !== G.PORT, reshape = G.PORT && !flip && Math.abs(G.wantH() - G.H) / G.H > (G.onFlip ? .04 : .15);
+    if (!forced && !G.rot && innerWidth > 0 && innerHeight > 0 && (flip || reshape) && !reloading) {
+      if (G.onFlip) { G.layout(); G.fit(); G.onFlip(); return; }
+      reloading = true; setTimeout(() => location.reload(), 250); return;
+    }
     const turn = G.turn = G.rot && innerHeight > innerWidth, W = turn ? innerHeight : innerWidth, H = turn ? innerWidth : innerHeight;
     const s = Math.min(W / G.W, H / G.H);
     G.s = s; G.ox = (W - G.W * s) / 2; G.oy = (H - G.H * s) / 2;
@@ -211,14 +222,30 @@
     return { el, stop() { clearInterval(t); }, get left() { return left; } };
   };
 
+  // ---- phones: the same corner button as the booth's swaps upright <-> sideways (shown on a game's title screen) ----
+  G.PHONE = !(document.fullscreenEnabled || document.webkitFullscreenEnabled) && (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1);
+  G.swapShow = on => {
+    if (!G.PHONE || innerHeight <= innerWidth) on = false;            // a phone held sideways is already landscape
+    let b = document.getElementById('gsw');
+    if (!b && on) {
+      b = G.$('<button id="gsw" class="gsw" aria-label="Turn the game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>');
+      b.addEventListener('click', () => {
+        if (parent !== window) return parent.postMessage({ type: 'swap-view' }, '*');   // inside the booth: the booth swaps and reopens this game
+        const u = new URL(location.href); if (G.rot) u.searchParams.delete('turn'); else u.searchParams.set('turn', '1'); location.replace(u.toString());
+      });
+    }
+    if (b) b.classList.toggle('on', !!on);
+  };
+
   // ---- the title card and the result card (same for every game) ----
   G.titleCard = (kicker, title, sub, onPlay) => {
+    G.swapShow(true);
     const TT = G.P(300, Math.round(G.H * .26));
     const t = G.$(`<div class="card" style="left:${G.P(560, 40)}px;top:${TT}px;width:${G.P(800, 608)}px;padding:46px 56px;text-align:center">
       <div style="font:500 22px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">${kicker}</div>
       <div style="font:72px/1.05 'Archivo Black';margin:14px 0 10px">${title}</div>
       <div style="font:30px/1.35 'Special Elite'">${sub}</div></div>`);
-    const b = G.button('Tap to play ▸', 790, 690, async () => { await G.audio(); G.music('loop.wav'); t.remove(); b.remove(); onPlay(); }, true);
+    const b = G.button('Tap to play ▸', 790, 690, async () => { G.swapShow(false); await G.audio(); G.music('loop.wav'); t.remove(); b.remove(); onPlay(); }, true);
     if (G.PORT) G.place(b, G.cx(b), TT + t.offsetHeight + 56);
     return t;
   };

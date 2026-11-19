@@ -2,7 +2,7 @@
 @import url('assets/fonts/fonts.css');
 :root{--paper:#E7DDC6;--ink:#1D1B18;--mustard:#E9A923;--charcoal:#2A2826;--strip:#F6F1E6;--red:#C8321E;
   --onsite:#3B40D8;--nook:#2F6BEF;--green:#22A06B;--orange:#E58A1F;--grey:#A7A9AC}
-html,body{margin:0;height:100%;background:#17140f;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#E7DDC6;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920px stage can't widen it (phones zoomed out to fit it) */
 #stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--paper);font-family:Inter,system-ui,sans-serif;color:var(--ink)}
 .bg{position:absolute;inset:0;background:var(--paper);
@@ -78,3 +78,7 @@ body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920p
 .port .lbg{grid-template-columns:repeat(10,63px);gap:6px}.port .lbkey{height:70px;font-size:30px}.port .lbkey.ok{font-size:22px}   /* 3 rows: stays above NookPass's QR button */
 .port .hud{font-size:28px}.port .hud b{font-size:34px}
 .port .btn{font-size:36px;padding:20px 30px}
+/* phones: the swap button on a game's title screen (same look as the booth's) */
+.gsw{position:absolute;left:1826px;top:24px;z-index:55;width:70px;height:70px;border:0;border-radius:18px;padding:0;background:rgba(42,40,38,.55);color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
+.gsw svg{width:34px;height:34px}.gsw.on{display:flex}
+.port .gsw{left:716px}.turned .gsw{top:760px}

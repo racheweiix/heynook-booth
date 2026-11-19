@@ -252,7 +252,8 @@ async function start() {
     <div style="font:500 ${G.P(22, 24)}px 'Special Elite';letter-spacing:.2em;color:#8a7a5a">MINI GAME A · TABLE ALLOCATION</div>
     <div style="font:72px/1.05 'Archivo Black';margin:14px 0 10px">Same Page</div>
     <div style="font:${G.P(30, 32)}px/1.35 'Special Elite'">${G.P('Three people, three copies of the seating plan.<br>Where does the VIP sit?', '3 copies of one plan.<br>Where does the VIP sit?')}</div></div>`);
-  const pb = button('Tap to play ▸', 790, 690, async () => { await G.audio(); G.music('loop.wav'); t.remove(); document.querySelectorAll('.btn').forEach(b => b.remove()); paperRound(); }, true);
+  G.swapShow(true);   // phones: the corner button swaps upright <-> sideways while the title shows
+  const pb = button('Tap to play ▸', 790, 690, async () => { G.swapShow(false); await G.audio(); G.music('loop.wav'); t.remove(); document.querySelectorAll('.btn').forEach(b => b.remove()); paperRound(); }, true);
   if (G.PORT) place(pb, G.cx(pb), TT + t.offsetHeight + 56);
 }
 
