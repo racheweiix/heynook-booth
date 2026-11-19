@@ -128,7 +128,7 @@
   var errBox = $('hn-err'), fsBtn = $('hn-fs'), whoosh = $('hn-whoosh');
   var vMain = player.querySelector('.hn-v0'), vLoop = player.querySelector('.hn-v1');
   var mode = 'h';   // 'h' = the 16:9 films in media/, 'v' = the 9:16 films in media/v/ (upright screens)
-  var VREADY = { intro: 1, loop: 1, A: 1, C: 1, poster: 1, curtain: 1 };   // vertical films made so far (the rest play their 16:9 film)
+  var VREADY = { intro: 1, loop: 1, A: 1, B: 1, C: 1, poster: 1, curtain: 1 };   // vertical films made so far (the rest play their 16:9 film)
   var forceH = false;   // a branch with no vertical film yet: the stage goes 16:9 for it, back to vertical after
   var url = function (k, m) { return MEDIA + ((m || mode) === 'v' && VREADY[k] ? 'v/' : '') + FILES[k]; };
   var HTOPS = { h: ['22.7%', '42.4%', '63.4%'], v: ['52.1%', '64.1%', '76.0%'] };   // where the A/B/C cards sit in each film
