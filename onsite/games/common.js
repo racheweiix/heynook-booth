@@ -35,13 +35,17 @@
       reloading = true; setTimeout(() => location.reload(), 250); return;
     }
     const turn = G.turn = G.rot && innerHeight > innerWidth, W = turn ? innerHeight : innerWidth, H = turn ? innerWidth : innerHeight;
-    const s = Math.min(W / G.W, H / G.H);
-    G.s = s; G.ox = (W - G.W * s) / 2; G.oy = (H - G.H * s) / 2;
+    // landscape on a screen taller than 16:9 (an iPad or laptop in full screen): the stage grows taller by LIFT and every
+    // piece moves down LIFT/2 (CSS translate), so the paper fills the screen edge to edge and the scene sits in the middle
+    G.LIFT = !G.PORT && !turn && W > 0 ? Math.max(0, Math.min(400, Math.round(1920 * H / W) - 1080)) : 0;
+    G.stage.style.height = G.PORT ? G.H + 'px' : G.LIFT ? (1080 + G.LIFT) + 'px' : ''; G.stage.style.setProperty('--lift', Math.round(G.LIFT / 2) + 'px');
+    const s = Math.min(W / G.W, H / (G.H + G.LIFT));
+    G.s = s; G.ox = (W - G.W * s) / 2; G.oy = (H - (G.H + G.LIFT) * s) / 2;
     G.stage.style.transform = turn ? `translate(${innerWidth - G.oy}px,${G.ox}px) rotate(90deg) scale(${s})` : `translate(${G.ox}px,${G.oy}px) scale(${s})`;
     document.documentElement.classList.toggle('turned', turn);   // lighter effects while turned (see common.css)
   };
   addEventListener('resize', G.fit); G.fit();
-  G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s, y: (y - G.oy) / G.s }; };   // screen point -> stage point
+  G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s, y: (y - G.oy) / G.s - (G.LIFT || 0) / 2 }; };   // screen point -> stage point
   G.pt = e => G.toStage(e.clientX, e.clientY);
   G.cx = el => Math.round((G.W - el.offsetWidth) / 2);   // x that centres an element on the stage
   G.$ = (html, parent = G.stage) => { const t = document.createElement('template'); t.innerHTML = html.trim(); const el = t.content.firstChild; parent.appendChild(el); return el; };
@@ -222,17 +226,25 @@
     return { el, stop() { clearInterval(t); }, get left() { return left; } };
   };
 
-  // ---- phones: the same corner button as the booth's swaps upright <-> sideways (shown on a game's title screen) ----
+  // ---- "turn your phone/iPad sideways": phones can't go full screen, and the horizontal view is edge to edge (NookPass hides
+  // its header and tab bar for a sideways phone), so the full-screen button asks for a turn. Closes itself once turned. ----
+  G.turnHint = () => {
+    if (innerHeight <= innerWidth || document.getElementById('turnhint')) return;
+    const ipad = navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) >= 700;
+    const h = document.createElement('div'); h.id = 'turnhint';
+    h.innerHTML = `<div class="th-card"><div class="th-dev${ipad ? ' tab' : ''}"><i></i></div><b>Turn your ${ipad ? 'iPad' : 'phone'} sideways</b><span>for the full-screen game</span></div>`;
+    document.body.appendChild(h); G.sfx('pop', -14);
+    const close = () => { h.remove(); removeEventListener('resize', onR); }, onR = () => { if (innerWidth > innerHeight) close(); };
+    addEventListener('resize', onR); h.addEventListener('pointerup', close); setTimeout(close, 7000);
+  };
+  // ---- phones: the same corner button as the booth's (shown on a game's title screen) asks for a turn ----
   G.PHONE = !(document.fullscreenEnabled || document.webkitFullscreenEnabled) && (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1);
   G.swapShow = on => {
     if (!G.PHONE || innerHeight <= innerWidth) on = false;            // a phone held sideways is already landscape
     let b = document.getElementById('gsw');
     if (!b && on) {
       b = G.$('<button id="gsw" class="gsw" aria-label="Turn the game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>');
-      b.addEventListener('click', () => {
-        if (parent !== window) return parent.postMessage({ type: 'swap-view' }, '*');   // inside the booth: the booth swaps and reopens this game
-        const u = new URL(location.href); if (G.rot) u.searchParams.delete('turn'); else u.searchParams.set('turn', '1'); location.replace(u.toString());
-      });
+      b.addEventListener('click', () => G.turnHint());
     }
     if (b) b.classList.toggle('on', !!on);
   };

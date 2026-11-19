@@ -82,3 +82,15 @@ body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920p
 .gsw{position:absolute;left:1826px;top:24px;z-index:55;width:70px;height:70px;border:0;border-radius:18px;padding:0;background:rgba(42,40,38,.55);color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer}
 .gsw svg{width:34px;height:34px}.gsw.on{display:flex}
 .port .gsw{left:716px}.turned .gsw{top:760px}
+/* the "turn your phone sideways" hint: a card over the page (screen px, not stage px), a little device turning on loop */
+#turnhint{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(231,221,198,.86);padding:16px;box-sizing:border-box}
+#turnhint .th-card{background:#FBF8F1;box-shadow:0 0 0 5px #fff,0 14px 24px rgba(40,28,10,.3);border-radius:10px;padding:24px 28px 20px;text-align:center;display:grid;gap:6px;justify-items:center;max-width:300px}
+#turnhint b{font:400 22px/1.15 'Archivo Black',sans-serif;color:var(--ink)}
+#turnhint span{font:16px 'Special Elite',monospace;color:#6b5d44}
+#turnhint .th-dev{width:46px;height:80px;border:5px solid var(--ink);border-radius:10px;margin:6px 0 14px;position:relative;animation:th-turn 2.4s ease-in-out infinite}
+#turnhint .th-dev.tab{width:62px;height:84px}
+#turnhint .th-dev i{position:absolute;left:50%;bottom:4px;width:10px;height:3px;margin-left:-5px;border-radius:2px;background:var(--ink)}
+@keyframes th-turn{0%,25%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (prefers-reduced-motion: reduce){#turnhint .th-dev{animation:none;transform:rotate(-90deg)}}
+/* landscape on a taller-than-16:9 screen: the paper layers fill the taller stage, everything else moves down half the extra */
+#stage > *:not(.bg):not(.grain):not(.vig){translate:0 var(--lift,0px)}

@@ -154,7 +154,7 @@ function goFull(fromButton) {
   const refused = () => {
     if (settled || fsOn()) return; settled = true;
     if (!fromButton) return;                                                             // the automatic try on "Tap to start": keep the button
-    if (window.self !== window.top && (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1) && innerHeight > innerWidth) { if (G.PORT) { fsRefused = true; fsSync(); return; } turnPhone(true); return; }   // in NookPass: stay in the app, turn sideways inside its frame
+    if (window.self !== window.top && (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1) && innerHeight > innerWidth) { G.turnHint(); return; }   // in NookPass: stay in the app, turn sideways inside its frame
     fsRefused = true; fsSync();                                                          // anywhere else: say so once and hide the button
     const n = document.getElementById('fsnote'); n.style.display = 'block'; setTimeout(() => n.style.display = 'none', 2600);
   };
@@ -176,8 +176,9 @@ function swapView() {   // the state rides in the address (storage can be blocke
   location.replace(u.toString());
 }
 fsb.addEventListener('click', () => {
-  if (PHONE) return swapView();         // phones: upright <-> sideways
-  goFull(true);
+  if (PHONE) return G.turnHint();       // iPhone: pages can't go full screen; turning the phone gives the edge-to-edge horizontal view
+  goFull(true);                          // iPad and laptop: real full screen (no address bar)
+  if (TABLET && UPRIGHT()) G.turnHint(); // an upright iPad: then turn it for the horizontal view
 });
 if (PHONE && /[?&]turn/.test(location.search)) turnPhone(true);
 document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
