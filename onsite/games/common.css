@@ -35,6 +35,7 @@ body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920p
 .turned .cut{filter:drop-shadow(0 6px 5px rgba(40,28,10,.26))}
 .turned .pup{filter:none}
 .turned .stamp{mix-blend-mode:normal}
+.turned .vig{display:none}   /* a full-screen overlay: above layered pieces it becomes one huge layer (WebKit measured: +31 MB) */
 .pup svg *{stroke:#fff;stroke-width:7;paint-order:stroke;stroke-linejoin:round}
 .pup svg .ln{stroke:#1d1d2b;stroke-width:4;paint-order:normal;fill:none;stroke-linecap:round}
 .pup svg .nb,.pup svg .slot *{stroke-width:0}

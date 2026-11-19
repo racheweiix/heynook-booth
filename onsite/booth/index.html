@@ -393,7 +393,7 @@ function endVideo(t, watched) {
 
 // ---------- a game ----------
 function openGame(t) {
-  screen = 'game'; fsSync(); clearTimeout(idleT);
+  screen = 'game'; fsSync(); clearTimeout(idleT); clearInterval(hopT);   // the board sits under the game: stop its highlight hopping
   if (G.musicGain) tween(.4, e => G.musicGain.gain.value = Math.pow(10, -18 / 20) * (1 - e), 'out', false);
   frame.src = `../games/${t.game}/${G.rot ? '?turn' : ''}`; frame.style.display = 'block'; frame.focus();   // a turned booth opens its games turned
 }

@@ -23,6 +23,8 @@
   -webkit-mask:radial-gradient(circle 12px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 12px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat}
 .hint .ht{font:32px/1.35 'Special Elite';margin-top:18px}.hint .ht b{font:400 34px 'Archivo Black'}
 .hint .hk{font:400 26px 'Archivo Black';margin-top:10px}
+.turned .pup{will-change:transform}   /* turned on a phone: the swaying crowd moves as layers instead of repainting (WebKit: 126 -> 43 ms CPU/s) */
+.sw{display:inline-block;font-family:'Archivo Black';font-weight:400;background:#15171D;color:#F5F5F2;padding:1px 12px 5px;border-radius:8px;line-height:1.1}.sw.gold{color:#E3BF63}
 .key{position:absolute;left:0;top:0;z-index:31;display:flex;gap:18px;background:var(--strip);padding:10px 16px;box-shadow:0 6px 10px rgba(40,28,10,.18);font:22px 'Special Elite'}
 .key span{display:flex;align-items:center;gap:8px}.key i{font:800 18px Inter;font-style:normal;padding:4px 8px;border-radius:5px}
 #real{position:absolute;left:0;top:0;width:330px;z-index:43;filter:drop-shadow(0 14px 14px rgba(40,28,10,.35))}
@@ -125,9 +127,9 @@ function hint(colour) {
     const dim = $('<div data-dim style="position:absolute;inset:0;background:rgba(231,221,198,.75);z-index:41"></div>');
     const body = colour
       ? `<div style="display:flex;gap:36px;align-items:flex-end;justify-content:center">
-          <div style="text-align:center"><img src="../assets/img/badge-white.png" style="height:300px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><div class="hk">SPEAKER = white text</div></div>
-          <div style="text-align:center"><img src="../assets/img/badge-gold.png" style="height:300px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><div class="hk" style="color:#B8892D">VIP = gold text</div></div></div>
-          <div class="ht">Now speakers print in <b>white</b> on black.<br>Tap the white ones. Gold text is a VIP.</div>`
+          <div style="text-align:center"><img src="../assets/img/badge-white.png" style="height:300px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><div class="hk">SPEAKER = <span class="sw">white text</span></div></div>
+          <div style="text-align:center"><img src="../assets/img/badge-gold.png" style="height:300px;filter:drop-shadow(0 8px 10px rgba(40,28,10,.25))"><div class="hk">VIP = <span class="sw gold">gold text</span></div></div></div>
+          <div class="ht">Speakers now wear <b>black badges</b> with <span class="sw">white text</span>.<br>Tap those. Skip the white badges and the <span class="sw gold">gold text</span> VIPs.</div>`
       : `<div style="display:flex;gap:44px;align-items:center;justify-content:center">${exampleBadge('SPEAKER', 'plain')}
           <div class="ht" style="text-align:left;margin:0">Find the <b>${NSP} speakers</b>.<br>Their badge says <b>SPEAKER</b>.<br>You have 10 seconds.</div></div>`;
     const c = $(`<div class="card hint" style="left:410px;top:120px;width:1100px;padding:34px 40px 30px;box-sizing:border-box;text-align:center">
@@ -145,10 +147,10 @@ async function round(colour) {
   P.forEach(p => { p._found = false; G.mood(p, null); });
   dress(colour); arrange(shuffled()); startSway();
   await hint(colour); if (run !== RUN) return;
-  const s = await strip(colour ? 'Tap the speakers: the WHITE text badges!' : `Find the ${NSP} speakers. Tap them!`, 90, 40, { rot: -1 });
+  const s = await strip(colour ? 'Tap the speakers: black badges, white text!' : `Find the ${NSP} speakers. Tap them!`, 90, 40, { rot: -1 });
   if (run !== RUN) return;
   hud = $('<div class="hud"></div>'); place(hud, 1430, 40, -1); setHud();
-  if (colour) { key = $(`<div class="key"><span><i style="background:#15171D;color:#F5F5F2">Aa</i>White text = Speaker</span><span><i style="background:#15171D;color:#E3BF63">Aa</i>Gold text = VIP</span></div>`); place(key, 1130, 106, 1); }
+  if (colour) { key = $(`<div class="key"><span><i style="background:#15171D;color:#F5F5F2">white text</i>= Speaker</span><span><i style="background:#15171D;color:#E3BF63">gold text</i>= VIP</span></div>`); place(key, 1130, 106, 1); }
   const done = new Promise(r => endRound = r);
   t0 = performance.now(); watch = G.watch(ROUND, 1730, 22, () => { over = true; endRound(); });
   IDLE.arm();

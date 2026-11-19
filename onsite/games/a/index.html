@@ -70,6 +70,7 @@
 .tray{position:absolute;left:0;top:0;z-index:7;width:300px;height:100px;box-sizing:border-box;border:3px dashed var(--onsite);border-radius:12px;background:rgba(59,64,216,.06);padding:8px 14px;font:700 18px Inter;color:var(--onsite)}
 .pup{z-index:22}.pup.gp{cursor:grab;touch-action:none}
 .pup.gp.lift{cursor:grabbing;z-index:27;filter:drop-shadow(0 18px 10px rgba(40,28,10,.3))}
+.turned .pup.gp.lift{will-change:transform}   /* turned on a phone: the guest in your hand moves as its own layer (WebKit: drag 271 -> 78 ms CPU/s) */
 .bub{position:absolute;left:0;top:0;z-index:28;background:#fff;border:4px solid var(--ink);border-radius:18px;padding:10px 16px 9px;font:24px/1.2 'Special Elite';white-space:nowrap;
   box-shadow:0 6px 0 rgba(0,0,0,.15);pointer-events:none}
 .bub b{display:block;font:800 17px Inter;letter-spacing:.06em;color:#6b5d44;margin-bottom:2px}
@@ -245,7 +246,7 @@ function dragGuest(p, ok, onDrop) {
   IDLE.arm();
   const rings = ok.map(n => svg('circle', { cx: T[n].x, cy: T[n].y, r: 96, fill: 'rgba(233,169,35,.12)', stroke: 'var(--mustard)', 'stroke-width': 9, 'stroke-dasharray': '18 12' }, plan));
   const home = { x: p._x, y: p._y }; let off = null, t = 0;
-  const pulse = setInterval(() => { if (!rings[0].isConnected) return clearInterval(pulse); t++; rings.forEach(r => r.setAttribute('r', t % 2 ? 104 : 96)); }, 266);
+  const pulse = G.turn ? 0 : setInterval(() => { if (!rings[0].isConnected) return clearInterval(pulse); t++; rings.forEach(r => r.setAttribute('r', t % 2 ? 104 : 96)); }, 266);   // turned: still rings (each pulse repaints the plan)
   const down = e => { e.preventDefault(); G.audio(); p.setPointerCapture(e.pointerId); const q = G.pt(e); off = { x: q.x - p._x, y: q.y - p._y }; p.classList.add('lift'); sfx('click-soft', -12); at(p, p._x, p._y, -6, 1.12); };
   const move = e => { if (!off) return; const q = G.pt(e); at(p, q.x - off.x, q.y - off.y, -6, 1.12); };
   const up = async () => {
