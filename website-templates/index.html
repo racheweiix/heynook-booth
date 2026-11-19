@@ -51,16 +51,17 @@ body:not(.is-grid) main { flex: 1 1 auto; display: flex; flex-direction: column;
 .page { position: absolute; inset: 0; border-radius: 22px; overflow: hidden; background: #fff;
   box-shadow: 0 30px 70px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.12); backface-visibility: hidden; }
 .panel .lid { position: absolute; inset: 0; border-radius: 18px; padding: 6px; backface-visibility: hidden;
-  background: linear-gradient(140deg, rgba(255,255,255,.22), rgba(255,255,255,.04) 45%, rgba(0,176,240,.10));
-  border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  /* glass look without backdrop-filter: a blur behind six moving 3D pages made iPads stutter */
+  background: linear-gradient(140deg, rgba(255,255,255,.22), rgba(255,255,255,.04) 45%, rgba(0,176,240,.10)), rgba(24,16,78,.55);
+  border: 1px solid rgba(255,255,255,.28);
   box-shadow: 0 40px 90px -30px rgba(0,0,0,.8), 0 0 40px -10px rgba(0,176,240,.35), inset 0 1px 0 rgba(255,255,255,.35); }
 .panel .lid .page { inset: 6px; border-radius: 12px; box-shadow: none; }
 .panel .lid::after { content: ""; position: absolute; inset: 0; border-radius: 18px; pointer-events: none;
-  background: linear-gradient(115deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 70%, rgba(255,255,255,.10) 100%); mix-blend-mode: screen; }
+  background: linear-gradient(115deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 70%, rgba(255,255,255,.08) 100%); opacity: .75; }
 .page iframe { position: absolute; left: 0; top: 0; width: 1280px; border: 0; transform-origin: 0 0; pointer-events: none; }
 .page::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 70%, rgba(11,6,48,.35)); pointer-events: none; }
 .reflect { position: absolute; left: 0; right: 0; top: 100%; height: 40%; margin-top: 14px; border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255,255,255,.10), transparent); filter: blur(6px); opacity: .5; backface-visibility: hidden; }
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 35%, transparent 70%); backface-visibility: hidden; }
 .label { position: absolute; z-index: 3; left: 50%; bottom: 56px; height: 64px; transform: translateX(-50%); text-align: center; display: grid; align-content: start; gap: 4px; pointer-events: none; width: min(560px, calc(100% - 32px)); }
 .label b { font-size: 22px; line-height: 1.3; letter-spacing: -.01em; }
 .label span { color: var(--mute); font-size: 15px; line-height: 1.45; }
@@ -155,7 +156,7 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
   var body = document.body, ring = document.getElementById("ring"), stage = document.getElementById("stage"), grid = document.getElementById("grid");
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var N = Math.max(6, SITES.length);            // panels on the ring; sites repeat until there are enough
-  var W = 440, H = 275, SCALE = 420 / 1280, R, TALL = 4600;
+  var W = 440, H = 275, SCALE = 420 / 1280, R, VIEWH = 800;   // VIEWH: each ring page is a 1280 x VIEWH live site, scrolled inside
   var queue = [];
   var panels = [], angle = 0, vel = 0, auto = reduce ? 0 : -0.06, current = 0;
   var label = stage.querySelector(".label"), navs = stage.querySelector(".navs"), hint = stage.querySelector(".hint");
@@ -179,9 +180,10 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
     H = Math.round(W * 0.625); SCALE = (W - 12) / 1280;
     R = Math.round((W + (phone ? 40 : 90)) / (2 * Math.tan(Math.PI / N)));
     ring.style.setProperty("--w", W + "px"); ring.style.setProperty("--h", H + "px");
+    VIEWH = Math.ceil((H - 12) / SCALE) + 2;
     panels.forEach(function (p, i) {
       p.el.style.transform = "rotateY(" + (i * 360 / N) + "deg) translateZ(" + R + "px)";
-      p.frame.style.transform = "scale(" + SCALE + ")";
+      p.frame.style.transform = "scale(" + SCALE + ")"; p.frame.style.height = VIEWH + "px"; p.travel = -1;
     });
   }
 
@@ -196,15 +198,27 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
     var site = SITES[i % SITES.length];
     var el = document.createElement("button"); el.type = "button"; el.className = "panel";
     el.setAttribute("aria-label", "Open " + site.name); el.tabIndex = -1;
-    var pg = makePage(site, TALL, 1280); var lid = document.createElement("span"); lid.className = "lid"; lid.appendChild(pg.page); el.appendChild(lid);
+    var pg = makePage(site, VIEWH, 1280); pg.frame.addEventListener("load", prepFrame); var lid = document.createElement("span"); lid.className = "lid"; lid.appendChild(pg.page); el.appendChild(lid);
     var rf = document.createElement("span"); rf.className = "reflect"; el.appendChild(rf);
     (function (idx) { el.addEventListener("click", function () { if (!moved) open(idx % SITES.length); }); })(i);
     ring.appendChild(el);
-    panels.push({ el: el, frame: pg.frame, site: site, off: Math.random() * 1000 });
+    panels.push({ el: el, frame: pg.frame, site: site, off: Math.random() * 1000, travel: -1, y: -1, vis: "", z: -1 });
+  }
+  // The pages scroll themselves like a phone home screen. They used to be 4600px-tall frames slid upwards, which made
+  // iPads keep six huge layers in memory; now each frame is only as tall as what it shows and scrolls its own document.
+  function prepFrame() {
+    try {
+      var d = this.contentDocument, st = d.createElement("style");
+      st.textContent = "html{scroll-behavior:auto!important;scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}";
+      d.head.appendChild(st);
+    } catch (e) {}
+  }
+  function travelOf(p) {
+    try { var d = p.frame.contentDocument.documentElement; return Math.max(0, d.scrollHeight - VIEWH); } catch (e) { return 0; }
   }
   SITES.forEach(function (site, i) {
     var c = document.createElement("button"); c.type = "button"; c.className = "card";
-    var pg = makePage(site, 2200, 1280); pg.frame.style.transform = "scale(" + (280 / 1280) + ")";
+    var pg = makePage(site, 820, 1280); pg.frame.style.transform = "scale(" + (280 / 1280) + ")";
     c.appendChild(pg.page);
     var b = document.createElement("b"); b.textContent = site.name; c.appendChild(b);
     var s = document.createElement("span"); s.textContent = site.tag; c.appendChild(s);
@@ -247,17 +261,20 @@ var SITES = [{"name": "NextGen HR Summit", "tag": "Calm learning journey · poin
         var a = ((i * 360 / N + angle) % 360 + 540) % 360 - 180;
         if (Math.abs(a) < bd) { bd = Math.abs(a); best = i; }
         var near = Math.cos(a * Math.PI / 180);
-        panels[i].el.style.opacity = (0.35 + 0.65 * Math.max(0, near)).toFixed(3);
-        panels[i].el.style.filter = near < 0.2 ? "brightness(.6)" : "";
-        panels[i].el.style.visibility = Math.abs(a) > 100 ? "hidden" : "";
+        var P = panels[i], vis = Math.abs(a) > 100 ? "hidden" : "";
+        P.el.style.opacity = (0.35 + 0.65 * Math.max(0, near)).toFixed(2);
+        if (P.vis !== vis) { P.vis = vis; P.y = -1; P.el.style.visibility = vis; P.frame.style.display = vis ? "none" : ""; }   // pages behind the ring stop drawing
         if (!panels[i].frame.srcdoc && !panels[i].queued && Math.abs(a) < 80) { panels[i].queued = 1; queue.push(panels[i].frame); if (Math.abs(a) < 35) queue.unshift(queue.pop()); }
         // grow as it reaches the front, shrink as it moves away
         var grow = 1 + (window.innerWidth < 640 ? 0.1 : 0.38) * Math.pow(Math.max(0, near), 6);
         panels[i].el.style.transform = "rotateY(" + (i * 360 / N) + "deg) translateZ(" + (R + (grow - 1) * 160).toFixed(1) + "px) scale(" + grow.toFixed(3) + ")";
-        panels[i].el.style.zIndex = Math.round(near * 100);
-        if (!reduce) { // each page scrolls itself like a home screen
-          var travel = TALL - (H - 12) / SCALE; var y = ((t / 40 + panels[i].off) % (travel * 2)); y = y > travel ? travel * 2 - y : y;
-          panels[i].frame.style.transform = "scale(" + SCALE + ") translateY(" + (-y).toFixed(1) + "px)";
+        var z = Math.round(near * 20); if (P.z !== z) { P.z = z; P.el.style.zIndex = z; }
+        if (!reduce && !vis && P.frame.srcdoc) { // each page scrolls itself like a home screen
+          if (P.travel < 0 || t - (P.measured || 0) > 4000) { P.travel = travelOf(P); P.measured = t; }
+          if (P.travel > 0) {
+            var y = (t / 40 + P.off) % (P.travel * 2); y = Math.round(y > P.travel ? P.travel * 2 - y : y);
+            if (y !== P.y) { P.y = y; try { P.frame.contentWindow.scrollTo(0, y); } catch (e) {} }
+          }
         }
       }
       current = best;
