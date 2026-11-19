@@ -60,15 +60,19 @@
 .hn-err{position:absolute;inset:auto 2cqw 2cqw 2cqw;background:#fff;color:#7A1020;border-radius:1cqw;padding:1.2cqw 1.6cqw;font-weight:600;font-size:1.4cqw;line-height:1.35}
 .hn-err[hidden]{display:none}
 /* the same full-screen button as Booth 01: white corners on a dark rounded square */
-.hn-fs{position:absolute;right:1.2cqw;top:1.2cqw;width:3.4cqw;height:3.4cqw;border-radius:.9cqw;border:0;padding:0;background:rgba(42,40,38,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hn-fs{position:absolute;right:calc(1.2cqw + var(--hn-cx,0px));top:calc(1.2cqw + var(--hn-cy,0px));width:3.4cqw;height:3.4cqw;border-radius:.9cqw;border:0;padding:0;background:rgba(42,40,38,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .hn-fs svg{width:1.65cqw;height:1.65cqw}
-.hn-framed.hn-turn .hn-fs{top:auto;bottom:1.2cqw}   /* turned inside NookPass: the bottom-left of the phone, clear of NookPass's QR button */
+.hn-framed.hn-turn .hn-fs{top:auto;bottom:calc(1.2cqw + var(--hn-cy,0px))}   /* turned inside NookPass: the bottom-left of the phone, clear of NookPass's QR button */
 .hn-fs[hidden]{display:none}
 .hn-tip{display:none;margin:10px 2px 0;font-size:14px;line-height:1.4;color:#475569;font-family:Inter,system-ui,sans-serif}
 @media (orientation:portrait) and (max-width:700px){.hn-tip{display:block}}
 /* booth mode: the stage fills the screen */
-.hn-kiosk{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;max-width:none;cursor:none}
-.hn-kiosk .hn-player{width:min(100vw,177.78vh);border-radius:0}
+.hn-kiosk{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;max-width:none;cursor:none;overflow:hidden}
+.hn-kiosk .hn-player{width:min(100vw,177.78vh);border-radius:0;flex:none}   /* the exact width is set in fitStage() */
+/* where the screen isn't 16:9 (an iPad, an upright phone), the strips beside the stage carry on the picture's own edge
+   colours (darkening towards the screen edge) instead of black bars */
+.hn-amb{display:none;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hn-kiosk .hn-amb{display:block}
 .hn-kiosk .hn-tip{display:none}
 .hn-framed{cursor:auto}
 .hn-kiosk.hn-turn{inset:auto;left:0;top:0;transform-origin:0 0}   /* an upright iPhone: the player turned sideways (sizes set in fitTurn) */
@@ -127,7 +131,7 @@
   var fsRefused = false;
   function goFull(fromButton) {
     if (!fsOK || fsOn() || fsRefused) return;
-    wrap.classList.add('hn-kiosk');
+    wrap.classList.add('hn-kiosk'); fitStage();
     var settled = false;
     function refused() {   // the browser said no: inside NookPass turn sideways in its frame (an upright touch screen); elsewhere hide the button
       if (settled || fsOn()) return; settled = true;
@@ -147,9 +151,53 @@
     wrap.classList.toggle('hn-turn', t);
     wrap.style.width = t ? W + 'px' : ''; wrap.style.height = t ? H + 'px' : '';
     wrap.style.transform = t ? 'translateX(' + innerWidth + 'px) rotate(90deg)' : '';
-    player.style.width = t ? Math.min(W, H * 16 / 9) + 'px' : '';
+    fitStage();
   }
   addEventListener('resize', fitTurn);
+  // Size the 16:9 stage. If the screen is within ~4% of 16:9 (a turned iPhone, NookPass's frame on an iPad) it fills
+  // the screen and a sliver is trimmed off two edges: at most 2.2% a side, so the A/B/C cards (2.3% in) stay whole and
+  // the full-screen button moves in by the trim. Otherwise the whole stage shows, with the soft picture beside it.
+  var amb = document.createElement('canvas'), actx = null, bars = false, tall = true, edge = 0;
+  amb.className = 'hn-amb'; amb.width = 16; amb.height = 9; amb.setAttribute('aria-hidden', 'true'); wrap.insertBefore(amb, player);
+  try { actx = amb.getContext('2d'); } catch (e) {}
+  function fitStage() {
+    if (!wrap.classList.contains('hn-kiosk')) { player.style.width = ''; bars = false; return; }
+    var t = wrap.classList.contains('hn-turn'), Wa = t ? innerHeight : innerWidth, Ha = t ? innerWidth : innerHeight;
+    var contain = Math.min(Wa, Ha * 16 / 9), cover = Math.max(Wa, Ha * 16 / 9), w = cover / contain <= 1.045 ? cover : contain;
+    player.style.width = Math.round(w) + 'px';
+    player.style.setProperty('--hn-cx', Math.max(0, (w - Wa) / 2).toFixed(1) + 'px');
+    player.style.setProperty('--hn-cy', Math.max(0, (w * 9 / 16 - Ha) / 2).toFixed(1) + 'px');
+    bars = w < Wa - 2 || w * 9 / 16 < Ha - 2;
+    tall = w * 9 / 16 < Ha - 2;                                 // strips above and below (else left and right)
+    edge = tall ? (Ha - w * 9 / 16) / 2 / Ha : (Wa - w) / 2 / Wa; // how much of the screen each strip takes
+    amb.width = tall ? 16 : 32; amb.height = tall ? 18 : 9;
+    paintAmb();
+  }
+  var pics = {};
+  function pic(k) { if (!pics[k]) { pics[k] = new Image(); pics[k].onload = paintAmb; pics[k].src = url(k); } return pics[k]; }
+  function paintAmb() {
+    if (!bars || !actx || document.hidden) return;
+    var v = vMain.classList.contains('on') ? vMain : vLoop.classList.contains('on') ? vLoop : null, src;
+    if (!startBtn.hidden || !v || v.readyState < 2) src = pic('poster');
+    else if (cur.classList.contains('closed')) src = pic('curtain');
+    else src = v;
+    var sw = src.videoWidth || src.naturalWidth, sh = src.videoHeight || src.naturalHeight;
+    if (!sw || !sh || (src.tagName === 'IMG' && !src.complete)) return;
+    try {
+      // each strip = the picture's outermost 2% stretched across it; the canvas is stretched over the whole screen
+      if (tall) { actx.drawImage(src, 0, 0, sw, sh * .02, 0, 0, 16, 9); actx.drawImage(src, 0, sh * .98, sw, sh * .02, 0, 9, 16, 9); }
+      else { actx.drawImage(src, 0, 0, sw * .02, sh, 0, 0, 16, 9); actx.drawImage(src, sw * .98, 0, sw * .02, sh, 16, 0, 16, 9); }
+      if (!startBtn.hidden) {   // the start screen darkens the poster (.hn-start): match it
+        actx.fillStyle = 'rgba(8,16,48,' + (tall ? .35 : .5) + ')'; actx.fillRect(0, 0, 16, 9);
+        actx.fillStyle = 'rgba(8,16,48,' + (tall ? .65 : .5) + ')'; actx.fillRect(tall ? 0 : 16, tall ? 9 : 0, 16, 9);
+      }
+      var g = tall ? actx.createLinearGradient(0, 0, 0, 18) : actx.createLinearGradient(0, 0, 32, 0), e = Math.min(.49, edge);
+      g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(e, 'rgba(0,0,0,0)'); g.addColorStop(1 - e, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)');
+      actx.fillStyle = g; actx.fillRect(0, 0, amb.width, amb.height);
+    } catch (e) {}
+  }
+  setInterval(paintAmb, 300); fitStage();
+  document.addEventListener('fullscreenchange', fitStage); document.addEventListener('webkitfullscreenchange', fitStage);
   function fsSync() { fsBtn.hidden = !(wrap.classList.contains('hn-kiosk') && ((fsOK && !fsRefused && !fsOn()) || phone)); }
   document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync); fsSync();
 
