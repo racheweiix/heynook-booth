@@ -60,7 +60,7 @@
 .tagc p span{font-size:17px}
 .playb{position:absolute;left:50%;top:50%;width:78px;height:78px;margin:-39px 0 0 -39px;border-radius:50%;background:var(--mustard);box-shadow:0 0 0 5px #fff,0 8px 12px rgba(40,28,10,.3);font:30px/78px Inter;text-align:center;color:var(--ink);padding-left:5px;box-sizing:border-box}
 #vplay{position:absolute;inset:0;z-index:40;background:#000;display:none}
-#vplay video{position:absolute;inset:0;width:1920px;height:1080px}
+#vplay video{position:absolute;inset:0;width:1920px;height:1080px;translate:var(--sx,0px) var(--lift,0px)}   /* the black fills a wider/taller stage, the video sits in the middle */
 #game{position:fixed;inset:0;width:100%;height:100%;border:0;display:none;z-index:100;background:#17140f}
 /* full screen on a tablet: the first "Tap to start" asks for it; this button brings it back if someone leaves it */
 #fsb{position:absolute;left:1826px;top:24px;z-index:55;width:70px;height:70px;border:0;border-radius:18px;padding:0;
@@ -120,12 +120,13 @@ const GAMES = TAGS.filter(t => t.game), VIDEOS = TAGS.filter(t => t.video);
 let RUN = 0, screen = '', played = new Set(), hopT = null;
 
 // ---------- pieces ----------
-function torn(y0, jag = 22, h = 260) {
-  let d = `M0 ${h} L0 ${y0}`; for (let x = 0; x <= 1920; x += 14 + G.rnd() * 18) d += ` L${x.toFixed(0)} ${(y0 + (G.rnd() - .5) * jag).toFixed(1)}`;
-  return d + ` L1920 ${y0} L1920 ${h} Z`;
+function torn(y0, jag = 22, h = 260, w = 1920) {
+  let d = `M0 ${h} L0 ${y0}`; for (let x = 0; x <= w; x += 14 + G.rnd() * 18) d += ` L${x.toFixed(0)} ${(y0 + (G.rnd() - .5) * jag).toFixed(1)}`;
+  return d + ` L${w} ${y0} L${w} ${h} Z`;
 }
 function ground(y) {   // upright: the torn ground runs down to the bottom of the screen (the buttons and lines sit on it)
-  const h = G.PORT ? G.H - y + 20 : 660, g = $(   /* landscape: runs past the bottom so a taller full-screen stage stays grounded (the stage clips it) */`<svg id="ground" viewBox="0 0 1920 ${h}" style="height:${h}px"><path fill="#2A2826" d="${torn(34, 22, h)}"/></svg>`, L); place(g, 0, y); return g;
+  // landscape: past the bottom and 400 past each side, so a taller or wider full-screen stage stays grounded (the stage clips it)
+  const h = G.PORT ? G.H - y + 20 : 660, w = G.PORT ? 1920 : 2720, g = $(`<svg id="ground" viewBox="0 0 ${w} ${h}" style="height:${h}px;width:${w}px"><path fill="#2A2826" d="${torn(34, 22, h, w)}"/></svg>`, L); place(g, G.PORT ? 0 : -400, y); return g;
 }
 function sun(x, y, r) { const s = $(`<div class="sun" style="width:${r * 2}px;height:${r * 2}px"></div>`, L); place(s, x - r, y - r); return s; }
 function cut(parent, src, x, y, w, r = 0, z = 10) { if (typeof parent === 'string') return cut(L, parent, src, x, y, w, r); const i = $(`<img class="cut cutimg" src="${IMG}${src}" alt="" style="width:${w}px;z-index:${z}">`, parent); place(i, x, y, r); return i; }

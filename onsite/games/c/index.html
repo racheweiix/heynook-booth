@@ -149,7 +149,7 @@ function posOf(i, n) {
   if (k < 0) return { x: D.x, y: D.floor };
   return { x: UP.qX0 - k * Math.min(120, UP.qSpan / Math.max(1, n - lead - 1)), y: UP.qFloor };
 }
-function newGuest(fromX = G.P(2060, G.W + 120), fromY = G.PORT ? UP.qFloor : FLOOR()) {
+function newGuest(fromX = G.P(2060 + (G.SPREAD || 0) / 2, G.W + 120), fromY = G.PORT ? UP.qFloor : FLOOR()) {
   const i = made++, g = G.person({ ...G.look(i + 3), s: S }, crowd);
   g._names = PEOPLE[i % PEOPLE.length]; g._name = g._names[0];
   G.at(g, fromX, fromY); Q.push(g); layout(); return g;
@@ -238,7 +238,7 @@ async function deskRound() {
     wrong += g._wrong || 0;
     hud.done++; Q.shift(); layout();
     await printTo(g, G.PORT ? UP.PX + .637 * UP.PW : 604, G.PORT ? UP.PY + .647 * UP.PW : 674, 112, 150);   // one desk: print, hand it over, then the next guest
-    G.walk(g, -160, D.floor, 560).then(() => g.remove());
+    G.walk(g, -160 - (G.SPREAD || 0) / 2, D.floor, 560).then(() => g.remove());   // off past a wider stage's left edge too
   }
   if (run !== RUN) return;
   clearInterval(arrivals); watch.stop(); unstrip(s);
@@ -331,7 +331,7 @@ async function pvcBeat(run) {
   const k = kiosk(G.PORT ? 10 : 240, 236 + dy, 1.0, true);
   const pr = $(`<img class="printer cut" src="${IMG}printer-pvc.png" alt="" style="width:380px">`, scene); place(pr, PX, PY);
   const look = { skin: '#C68E6A', shirt: '#6F7255', hair: 'hijab', hairC: '#4F6B6A' }, name = 'Siti Rahman';
-  const g = G.person({ ...look, s: .84 }, crowd); G.at(g, G.P(2080, G.W + 120), 1070 + dy);
+  const g = G.person({ ...look, s: .84 }, crowd); G.at(g, G.P(2080 + (G.SPREAD || 0) / 2, G.W + 120), 1070 + dy);
   const s = await strip(G.PORT ? 'Snap your own headshot' : 'Printing PVC? Guests snap their own headshot.', G.P(90, 24), G.P(40, 24), { rot: .6 }); if (run !== RUN) return;
   await G.walk(g, G.PORT ? 300 : 470, 1070 + dy, 760); if (run !== RUN) return;
   k.show(UI.photo()); sfx('pop', -14);

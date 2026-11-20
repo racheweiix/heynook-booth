@@ -93,4 +93,4 @@ body{position:fixed;inset:0}   /* the page stays exactly screen-sized: the 1920p
 @keyframes th-turn{0%,25%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
 @media (prefers-reduced-motion: reduce){#turnhint .th-dev{animation:none;transform:rotate(-90deg)}}
 /* landscape on a taller-than-16:9 screen: the paper layers fill the taller stage, everything else moves down half the extra */
-#stage > *:not(.bg):not(.grain):not(.vig){translate:0 var(--lift,0px)}
+#stage > *:not(.bg):not(.grain):not(.vig):not(#vplay){translate:var(--sx,0px) var(--lift,0px)}   /* and right half the extra on a wider-than-16:9 screen */

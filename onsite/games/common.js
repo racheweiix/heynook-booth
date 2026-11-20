@@ -37,15 +37,20 @@
     const turn = G.turn = G.rot && innerHeight > innerWidth, W = turn ? innerHeight : innerWidth, H = turn ? innerWidth : innerHeight;
     // landscape on a screen taller than 16:9 (an iPad or laptop in full screen): the stage grows taller by LIFT and every
     // piece moves down LIFT/2 (CSS translate), so the paper fills the screen edge to edge and the scene sits in the middle
+    // and on a screen wider than 16:9 (a phone held sideways) it grows wider by SPREAD, every piece moving right SPREAD/2
     G.LIFT = !G.PORT && !turn && W > 0 ? Math.max(0, Math.min(400, Math.round(1920 * H / W) - 1080)) : 0;
-    G.stage.style.height = G.PORT ? G.H + 'px' : G.LIFT ? (1080 + G.LIFT) + 'px' : ''; G.stage.style.setProperty('--lift', Math.round(G.LIFT / 2) + 'px');
-    const s = Math.min(W / G.W, H / (G.H + G.LIFT));
-    G.s = s; G.ox = (W - G.W * s) / 2; G.oy = (H - (G.H + G.LIFT) * s) / 2;
+    G.SPREAD = !G.PORT && !turn && H > 0 ? Math.max(0, Math.min(600, Math.round(1080 * W / H) - 1920)) : 0;
+    G.stage.style.height = G.PORT ? G.H + 'px' : G.LIFT ? (1080 + G.LIFT) + 'px' : '';
+    G.stage.style.width = G.PORT ? G.W + 'px' : G.SPREAD ? (1920 + G.SPREAD) + 'px' : '';
+    G.stage.style.setProperty('--lift', Math.round(G.LIFT / 2) + 'px'); G.stage.style.setProperty('--sx', Math.round(G.SPREAD / 2) + 'px');
+    const s = Math.min(W / (G.W + G.SPREAD), H / (G.H + G.LIFT));
+    G.s = s; G.ox = (W - (G.W + G.SPREAD) * s) / 2; G.oy = (H - (G.H + G.LIFT) * s) / 2;
     G.stage.style.transform = turn ? `translate(${innerWidth - G.oy}px,${G.ox}px) rotate(90deg) scale(${s})` : `translate(${G.ox}px,${G.oy}px) scale(${s})`;
     document.documentElement.classList.toggle('turned', turn);   // lighter effects while turned (see common.css)
   };
   addEventListener('resize', G.fit); G.fit();
-  G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s, y: (y - G.oy) / G.s - (G.LIFT || 0) / 2 }; };   // screen point -> stage point
+  G.toStage = (cx, cy) => { const x = G.turn ? cy : cx, y = G.turn ? innerWidth - cx : cy; return { x: (x - G.ox) / G.s - (G.SPREAD || 0) / 2, y: (y - G.oy) / G.s - (G.LIFT || 0) / 2 }; };
+  G.OFF = 2700;   // an x that is off the stage's right edge in every layout (a wider stage included): park pieces here   // screen point -> stage point
   G.pt = e => G.toStage(e.clientX, e.clientY);
   G.cx = el => Math.round((G.W - el.offsetWidth) / 2);   // x that centres an element on the stage
   G.$ = (html, parent = G.stage) => { const t = document.createElement('template'); t.innerHTML = html.trim(); const el = t.content.firstChild; parent.appendChild(el); return el; };
@@ -89,14 +94,14 @@
     G.sfx('stamp', -6); await G.tween(.12, e => G.place(el, x, y, rot, 1.9 - .9 * e)); return el;
   };
   G.wipe = async (mid) => {           // a torn charcoal sheet sweeps across, the scene changes under it
-    const H = G.H, Wd = G.W + 180, el = G.$(`<svg class="wipe" viewBox="0 0 ${Wd} ${H}" style="width:${Wd}px;height:${H}px"><path fill="#2A2826"/></svg>`);
+    const sx = (G.SPREAD || 0) / 2, ly = (G.LIFT || 0) / 2, H = G.H + 2 * ly, Wd = G.W + 2 * sx + 180, el = G.$(`<svg class="wipe" viewBox="0 0 ${Wd} ${H}" style="width:${Wd}px;height:${H}px"><path fill="#2A2826"/></svg>`);   // covers a wider/taller stage too
     let d = 'M90 0'; for (let y = 0; y <= H; y += 30) d += ` L${(90 + (G.rnd() - .5) * 40).toFixed(0)} ${y}`;
     d += ` L${Wd - 90} ${H}`; for (let y = H; y >= 0; y -= 30) d += ` L${(Wd - 90 + (G.rnd() - .5) * 40).toFixed(0)} ${y}`;
     el.querySelector('path').setAttribute('d', d + ' Z');
     G.sfx('whoosh-short', -12); G.sfx('paper', -14);
-    await G.tween(.36, e => G.place(el, -Wd + (Wd - 90) * e, 0), 'inout');
+    await G.tween(.36, e => G.place(el, -sx - Wd + (Wd - 90) * e, -ly), 'inout');
     if (mid) await mid();
-    await G.tween(.36, e => G.place(el, -90 + (G.W + 80) * e, 0), 'inout'); el.remove();
+    await G.tween(.36, e => G.place(el, -sx - 90 + (G.W + 2 * sx + 80) * e, -ly), 'inout'); el.remove();
   };
   G.button = (label, x, y, onTap, main = false) => {
     const b = G.$(`<button class="btn${main ? ' main' : ''}">${label}</button>`); G.place(b, x, y);
